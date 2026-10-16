@@ -84,15 +84,18 @@ namespace DBZ.Combat
         [SerializeField] private string sortingLayerName = "player";
         // Ordre au niveau 0 ; chaque case est décalée selon son niveau (LevelMap.SortingOrdersPerLevel)
         [SerializeField] private int sortingOrder = 1;
-        [Tooltip("Directions où le départ du rayon passe sous le joueur, qui reste devant "
-            + "(Final Flash : haut ; Makankosappo : haut, gauche, droite)")]
+        [Tooltip("Directions où le joueur est dessiné devant le départ de son rayon (il passe d'un cran au-dessus du rayon "
+            + "tant que celui-ci est affiché ; le rayon reste au-dessus des ennemis). Final Flash : haut ; Makankosappo : haut, gauche, droite")]
         [SerializeField] private CellSides startBehindPlayerDirections = CellSides.None;
-        [Tooltip("Directions où le bout avancé dans la case de la cible (Target Overlap Pixels) passe derrière elle "
-            + "(bas : le rayon arrive par le haut de sa case, vue de dessus)")]
+        [Tooltip("Directions où le rayon passe derrière la cible (bas : le rayon arrive par le haut de sa case, vue de dessus) : "
+            + "tout le rayon passe sous les personnages dès qu'il touche une cible (le joueur passe alors sous son rayon)")]
         [SerializeField] private CellSides tipBehindTargetDirections = CellSides.Down;
 
         public bool IsReleased { get; private set; }
         public float Cooldown => cooldown;
+        // Décalage à appliquer à l'ordre d'affichage du joueur qui tire, tant que le rayon existe : au-dessus de son rayon
+        // (départ derrière lui), en dessous quand tout le rayon passe sous une cible collée, 0 sinon
+        public int ShooterSortingOffset { get; private set; }
 
         private Vector2 direction;
         // Niveau de hauteur du joueur au tir : le rayon suit ensuite les tuiles Niveaux, comme le joueur
@@ -118,6 +121,8 @@ namespace DBZ.Combat
         // Cases affichées à la dernière image, figées au relâchement pour la fermeture
         private int lastVisible;
         private int releaseVisible;
+        // Le rayon touche une cible (ennemi, punching-ball...) : gardé tel quel après le relâchement, pendant la traînée
+        private bool touchesTarget;
         private float releaseTime;
 
         public void Launch(Vector2 dir, int level)
@@ -160,7 +165,7 @@ namespace DBZ.Combat
             // Départ reculé vers les mains : un morceau de corps collé au bord avant du départ bouche le trou qu'il laisse
             // avant le morceau suivant (couvre un recul d'un morceau au plus : 16 px à 2 morceaux par case).
             // Pas sous le départ : il se verrait dans ses parties transparentes (arrière arrondi du Final Flash).
-            // Ce qui dépasse passe sous le morceau suivant, dessiné par-dessus.
+            // Ce qui dépasse recouvre le morceau suivant, fait du même corps (même image, même épaisseur).
             if (along < 0f && segments > 1)
             {
                 var filler = new GameObject("StartFiller");
@@ -275,7 +280,7 @@ namespace DBZ.Combat
             {
                 // Tout ce qui est sur les cases traversées (avant le mur éventuel) est frappé
                 if (!IsReleased)
-                    DamageAll(isHitting ? blockedIndex : reach);
+                    touchesTarget = DamageAll(isHitting ? blockedIndex : reach);
             }
             else if (target != null && !IsReleased)
                 DamageTarget(target, CellCenter(blockedIndex));
@@ -297,7 +302,20 @@ namespace DBZ.Combat
             lastVisible = visibleSegments;
             // Bout avancé dans la case de la cible : arrêté par un objet (pas un mur), pas collé à lui, rayon arrivé jusqu'à lui
             bool reachesTarget = target != null && blockedIndex > 0 && visibleSegments == blockedIndex * segmentsPerCell;
-            UpdateSprites(visibleSegments, isHitting, trailIndex);
+            if (!piercesTargets && !IsReleased)
+                touchesTarget = target != null;
+            // Rayon qui touche une cible dans une direction où il passe derrière elle (bas) : tout le rayon passe sous les personnages,
+            // pas seulement le bout (un grand ennemi, comme Cell, dépasse dans la case d'avant), et le joueur passe sous son rayon
+            bool underTarget = touchesTarget && (tipBehindTargetDirections & DirectionSide(direction)) != 0;
+            // Personnages au rang 0 de la tranche de leur niveau, rayon au rang sortingOrder : le joueur passe juste au-dessus,
+            // ou sous le rayon (rang -1) quand celui-ci est sous la cible
+            if (underTarget)
+                ShooterSortingOffset = -2;
+            else if ((startBehindPlayerDirections & DirectionSide(direction)) != 0)
+                ShooterSortingOffset = sortingOrder + 1;
+            else
+                ShooterSortingOffset = 0;
+            UpdateSprites(visibleSegments, isHitting, trailIndex, underTarget);
             UpdateTipOverlap(visibleSegments, reachesTarget && !(IsReleased && trailIndex >= visibleSegments - 1));
         }
 
@@ -381,8 +399,9 @@ namespace DBZ.Combat
             }
         }
 
-        // Rayon qui traverse : frappe une fois par intervalle chaque cible des cases 0 à count - 1 (à leur niveau)
-        private void DamageAll(int count)
+        // Rayon qui traverse : frappe une fois par intervalle chaque cible des cases 0 à count - 1 (à leur niveau).
+        // Vrai s'il y a au moins une cible (ou un obstacle cassable) sur le trajet
+        private bool DamageAll(int count)
         {
             var hits = new System.Collections.Generic.List<(Collider2D collider, Vector2 cellCenter)>();
             for (int i = 0; i < count && i < maxLength; i++)
@@ -398,12 +417,12 @@ namespace DBZ.Combat
             {
                 // Rien sur le trajet : le prochain contact frappe tout de suite
                 damageTimer = 0f;
-                return;
+                return false;
             }
 
             damageTimer -= Time.deltaTime;
             if (damageTimer > 0f)
-                return;
+                return true;
             damageTimer = damageInterval;
 
             // Une même cible peut avoir plusieurs colliders : on ne la frappe qu'une fois
@@ -419,6 +438,7 @@ namespace DBZ.Combat
                 if (canDestroyObstacles && hit.TryGetComponent(out DestructibleTilemap destructibles))
                     destructibles.TakeDamage(cellCenter, damage);
             }
+            return true;
         }
 
         // Image manquante (Final Flash : ni tête, ni impact, ni traînée ; Makankosappo : ni tête, ni traînée) : le corps du rayon
@@ -435,7 +455,7 @@ namespace DBZ.Combat
             return bodySprites[(int)(Time.time * animationFramesPerSecond) % bodySprites.Length];
         }
 
-        private void UpdateSprites(int visible, bool isHitting, int trailIndex)
+        private void UpdateSprites(int visible, bool isHitting, int trailIndex, bool underTarget)
         {
             int frame = impactSprites.Length > 0 ? (int)(Time.time * animationFramesPerSecond) % impactSprites.Length : 0;
             Sprite impactSprite = impactSprites.Length > 0 ? impactSprites[frame] : null;
@@ -456,10 +476,11 @@ namespace DBZ.Combat
                     cellAppearTimes[i] = Time.time;
                 sr.enabled = true;
                 int cellLevel = cellLevels[i / segmentsPerCell];
-                sr.sortingOrder = sortingOrder + cellLevel * LevelMap.SortingOrdersPerLevel;
-                // Joueur au rang 0 de la tranche de son niveau : un rang en dessous, il est dessiné devant le départ
-                if (i == 0 && (startBehindPlayerDirections & DirectionSide(direction)) != 0)
-                    sr.sortingOrder = cellLevel * LevelMap.SortingOrdersPerLevel - 1;
+                // Au-dessus des personnages (rang 0), départ compris : le joueur passe lui-même devant son départ
+                // (ShooterSortingOffset) ; sous eux quand tout le rayon est sous une cible collée
+                sr.sortingOrder = underTarget
+                    ? cellLevel * LevelMap.SortingOrdersPerLevel - 1
+                    : sortingOrder + cellLevel * LevelMap.SortingOrdersPerLevel;
                 if (IsReleased && i == trailIndex && i != last)
                     sr.sprite = OrBody(releaseTrailSprite);
                 else if (i == 0 && startSprites.Length > 0)
@@ -523,7 +544,8 @@ namespace DBZ.Combat
             UpdateEndFiller(visible);
         }
 
-        // Le bouchage du bout prend le corps, l'épaisseur et l'ordre du morceau d'avant, juste en dessous
+        // Le bouchage du bout prend le corps, l'épaisseur et l'ordre le plus bas des deux morceaux voisins.
+        // Pas en dessous : il passerait sous la cible ou le joueur ; ce qu'il recouvre du morceau d'avant est le même corps
         private void UpdateEndFiller(int visible)
         {
             if (endFiller == null || !endFiller.enabled)
@@ -538,12 +560,13 @@ namespace DBZ.Combat
                 return;
             }
             endFiller.sprite = CurrentBody();
-            endFiller.sortingOrder = Mathf.Min(previous.sortingOrder, tip.sortingOrder) - 1;
+            endFiller.sortingOrder = Mathf.Min(previous.sortingOrder, tip.sortingOrder);
             endFiller.transform.localScale = tip.transform.localScale;
         }
 
         // Le morceau de bouchage n'a de sens qu'entre le départ et le morceau suivant : affiché quand les deux le sont
-        // (sinon, collé à un mur, il dépasserait devant le départ), avec l'épaisseur du morceau suivant, sous les deux
+        // (sinon, collé à un mur, il dépasserait devant le départ), avec l'épaisseur du morceau suivant et le même ordre
+        // (pas en dessous : il passerait sous les personnages ; ce qu'il recouvre du morceau suivant est le même corps)
         private void UpdateStartFiller()
         {
             if (startFiller == null)
@@ -554,7 +577,7 @@ namespace DBZ.Combat
             if (!startFiller.enabled)
                 return;
             startFiller.sprite = CurrentBody();
-            startFiller.sortingOrder = Mathf.Min(start.sortingOrder, next.sortingOrder) - 1;
+            startFiller.sortingOrder = Mathf.Min(start.sortingOrder, next.sortingOrder);
             startFiller.transform.localScale = next.transform.localScale;
         }
     }

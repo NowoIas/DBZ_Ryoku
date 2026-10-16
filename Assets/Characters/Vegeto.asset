@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: Vegeto
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Vegeto
+  animatorController: {fileID: 22100000, guid: bb7f00db40f9a434a94ab19149bc35a3, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: 7bb040026f56d4a41beb070736ebe873, type: 2}
+  transformAtDetransformSpeed: 0
+  transformAtDetransformSpeedPerStage: 
+  startSprite: {fileID: -1571553376, guid: c0b526a3cea222948bd87d3ebf4ec8f9, type: 3}
+  beamPrefab: {fileID: 0}
+  transformedBeamPrefabs: []
+  chargedTechniquePrefab: {fileID: 0}
+  chargedBeamPrefab: {fileID: 2334404194698315446, guid: f244f2e6987192d429ff56ab769a24be, type: 3}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 1
+  spinHitsDiagonals: 1
+  spinHealthCost: 5
+  spinKiCost: 5
+  spinHealRatio: 0
+  spinCooldown: 0.5
+  spinSpeed: 1.25
+  spinBladeStraight: {fileID: 5478920475742169724, guid: 7b44b793072f7624ca575bd16dc608cc, type: 3}
+  spinBladeDiagonal: {fileID: 4239420588181514008, guid: 7b44b793072f7624ca575bd16dc608cc, type: 3}
+  spinBladeStepDegrees: 45
+  spinBladeBehindDirections: 14
+  spinBladeRightOffsetPixels: {x: 12, y: 0}
+  spinBladeUpRightOffsetPixels: {x: 6, y: 6}
+  spinBladeUpOffsetPixels: {x: 0, y: 12}
+  spinBladeUpLeftOffsetPixels: {x: -6, y: 6}
+  spinBladeLeftOffsetPixels: {x: -12, y: 0}
+  spinBladeDownLeftOffsetPixels: {x: -6, y: -6}
+  spinBladeDownOffsetPixels: {x: 0, y: -6}
+  spinBladeDownRightOffsetPixels: {x: 6, y: -6}
+  swordOnE: 0
+  swordDamage: 20
+  swordCooldown: 0
+  swordInFrontDirections: 13
+  noTechniqueOnE: 0
+  specialProjectilePrefab: {fileID: 0}
+  specialKiCost: 15
+  specialCooldown: 0.5

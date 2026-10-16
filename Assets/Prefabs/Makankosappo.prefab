@@ -53,6 +53,7 @@ MonoBehaviour:
   - {fileID: -4727957555733533606, guid: 980ed4507b2dc3f4bb4f657c815653e8, type: 3}
   releaseTrailSprite: {fileID: 0}
   headSprite: {fileID: 0}
+  headSprites: []
   bodySprite: {fileID: -8572366500388809629, guid: 980ed4507b2dc3f4bb4f657c815653e8, type: 3}
   bodySprites:
   - {fileID: -8572366500388809629, guid: 980ed4507b2dc3f4bb4f657c815653e8, type: 3}
@@ -74,9 +75,11 @@ MonoBehaviour:
   canDestroyObstacles: 1
   piercesTargets: 1
   impactAtTip: 1
+  targetOverlapPixels: 0
   openDuration: 0
   closeDuration: 0
   cooldown: 1
   sortingLayerName: player
   sortingOrder: 1
   startBehindPlayerDirections: 13
+  tipBehindTargetDirections: 0

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
   displayName: Trunks enfant
   animatorController: {fileID: 22100000, guid: 348862e215906c3419da8cc09ad96a05, type: 2}
-  transformedControllers: []
+  transformedControllers:
+  - {fileID: 22100000, guid: feaec93acc4536e44a42ac4aaee38262, type: 2}
   transformAtDetransformSpeed: 0
   transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: -1700774783, guid: c423e01a58a10f44fa1c6d52150e7d21, type: 3}

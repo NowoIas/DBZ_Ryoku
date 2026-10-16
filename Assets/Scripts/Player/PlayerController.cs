@@ -154,6 +154,10 @@ public class PlayerController : MonoBehaviour
     private UnityEngine.Tilemaps.Tilemap bridgeTilemap;
     // Rayon du Kamehameha en cours (arrêté si Goku meurt pendant le tir)
     private KamehamehaBeam activeBeam;
+    // Dernier rayon lancé, gardé jusqu'à sa disparition (traînée comprise) : il règle l'ordre d'affichage du joueur
+    private KamehamehaBeam sortingBeam;
+    // Coup d'épée en cours dans une direction où il passe devant les ennemis
+    private bool isSwordInFront;
     // Technique R en charge (annulée si le joueur meurt)
     private ChargedTechnique activeGenkidama;
     // Techniques E et R du personnage joué (sa fiche, sinon celles du PlayerController)
@@ -190,9 +194,15 @@ public class PlayerController : MonoBehaviour
     private static readonly int SpecialShotState = Animator.StringToHash("SpecialShot");
     private static readonly int TransformSpeed = Animator.StringToHash("transformSpeed");
     private static readonly int DetransformSpeed = Animator.StringToHash("detransformSpeed");
+    private static readonly int SpinSpeed = Animator.StringToHash("spinSpeed");
 
     private Animator animator;
     private SpriteRenderer spriteRenderer;
+    // Lame d'énergie de la toupie (Vegeto) : enfant créé au lancement, affiché seulement pendant la toupie
+    private SpriteRenderer spinBlade;
+    private bool isSpinning;
+    // Angle de la 1re image de la toupie (direction où il regardait au lancement)
+    private float spinStartAngle;
     private RuntimeAnimatorController baseController;
     private PlayerKi ki;
     private Health health;
@@ -215,6 +225,11 @@ public class PlayerController : MonoBehaviour
         heightLevel = GetComponent<HeightLevel>();
         groundSortingLayer = spriteRenderer.sortingLayerName;
         controls = new InputSystem_Actions();
+
+        var blade = new GameObject("SpinBlade");
+        blade.transform.SetParent(transform, false);
+        spinBlade = blade.AddComponent<SpriteRenderer>();
+        spinBlade.enabled = false;
 
         // On aligne le joueur sur le centre d'une case, pour que les tests de collision tombent juste
         var pos = transform.position;
@@ -365,7 +380,7 @@ public class PlayerController : MonoBehaviour
             // Personnage sans technique E (Trunks enfant) : la touche ne fait rien
             bool kamehamehaHeld = (actions.Kamehameha.IsPressed() || buffered == BufferedAction.Kamehameha)
                 && (character == null || !character.noTechniqueOnE)
-                && (spinOnE ? health.CanSpend(character.spinHealthCost) : swordOnE || CanAffordBeam());
+                && (spinOnE ? CanAffordSpin() : swordOnE || CanAffordBeam());
             // Pas de mémoire d'appui : la touche doit être tenue (un appui déjà relâché annulerait la charge et perdrait le Ki)
             bool genkidamaHeld = actions.Genkidama.IsPressed()
                 && (specialProjectilePrefab != null ? ki.CanSpend(character.specialKiCost)
@@ -664,6 +679,7 @@ public class PlayerController : MonoBehaviour
         KamehamehaBeam beam = Instantiate(prefab, transform.position + (Vector3)facing, Quaternion.identity);
         beam.Launch(facing, level);
         activeBeam = beam;
+        sortingBeam = beam;
         if (!paysWithHealth)
             ki.StartKamehamehaBeam();
 
@@ -697,14 +713,23 @@ public class PlayerController : MonoBehaviour
         nextMeleeTime = Time.time + (isCritical ? criticalCooldown : meleeCooldown);
     }
 
-    // Toupie de Piccolo (touche E) : il tourne sur lui-même (état Spin, planche s2) et frappe les 4 cases autour de lui
-    // au milieu de l'animation, une fois par cible ; il regagne une part des dégâts infligés
+    // Toupie payée en PV (Piccolo) ou en Ki (Vegeto), selon le personnage
+    private bool CanAffordSpin()
+    {
+        return paysWithHealth ? health.CanSpend(character.spinHealthCost) : ki.CanSpend(character.spinKiCost);
+    }
+
+    // Toupie de Piccolo / Vegeto (touche E) : il tourne sur lui-même (état Spin, planche s2) et frappe les 4 cases autour de lui
+    // au milieu de l'animation, une fois par cible ; il regagne une part des dégâts infligés (spinHealRatio, 0 = aucun soin)
     IEnumerator Spin()
     {
-        if (!health.TrySpend(character.spinHealthCost))
+        // En Ki : comme un Ki Blast (recharge coupée pendant la toupie)
+        if (paysWithHealth ? !health.TrySpend(character.spinHealthCost) : !ki.TryStartKiBlast(character.spinKiCost))
             yield break;
 
         isAttacking = true;
+        // Vitesse propre au personnage (fiche), relue à chaque image pour pouvoir la régler en Play
+        animator.SetFloat(SpinSpeed, character.spinSpeed);
         animator.Play(SpinState, 0, 0f);
         // L'Animator n'entre dans l'état qu'à sa prochaine mise à jour (sécurité si l'Animator est mal réglé)
         float timeout = 0.5f;
@@ -713,10 +738,13 @@ public class PlayerController : MonoBehaviour
             timeout -= Time.deltaTime;
             yield return null;
         }
+        spinStartAngle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg;
+        isSpinning = true;
 
         bool hasHit = false;
         while (IsInAttackState() && animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
         {
+            animator.SetFloat(SpinSpeed, character.spinSpeed);
             if (!hasHit && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= meleeHitTime)
             {
                 SpinHit();
@@ -728,17 +756,88 @@ public class PlayerController : MonoBehaviour
         if (!hasHit)
             SpinHit();
 
+        HideSpinBlade();
         animator.Play(IdleState, 0, 0f);
         nextBeamTime = Time.time + character.spinCooldown;
         isAttacking = false;
+        if (!paysWithHealth)
+            ki.EndKiBlast();
     }
 
-    // Frappe les 4 cases voisines (à son niveau), casse les Destructibles, puis soigne selon les dégâts réellement infligés
+    // Dans LateUpdate, après l'Animator : la lame suit l'image de la toupie réellement affichée (et la vitesse de l'état Spin)
+    private void LateUpdate()
+    {
+        UpdateBeamSorting();
+        if (!isSpinning)
+            return;
+        if (character == null || character.spinBladeStraight == null || !IsInAttackState())
+        {
+            spinBlade.enabled = false;
+            return;
+        }
+
+        var state = animator.GetCurrentAnimatorStateInfo(0);
+        var clips = animator.GetCurrentAnimatorClipInfo(0);
+        int frameCount = clips.Length > 0 ? Mathf.Max(1, Mathf.RoundToInt(clips[0].clip.length * clips[0].clip.frameRate)) : 8;
+        int frame = Mathf.Clamp(Mathf.FloorToInt(state.normalizedTime * frameCount), 0, frameCount - 1);
+
+        // Direction de la lame en huitièmes de tour (0 = droite, 2 = haut...) : droite / haut / gauche / bas = image droite tournée,
+        // diagonales = image haut-droite tournée
+        float angle = spinStartAngle + character.spinBladeStepDegrees * frame;
+        int direction = ((Mathf.RoundToInt(angle / 45f) % 8) + 8) % 8;
+        bool diagonal = direction % 2 == 1;
+        spinBlade.sprite = diagonal && character.spinBladeDiagonal != null ? character.spinBladeDiagonal : character.spinBladeStraight;
+        spinBlade.transform.localRotation = Quaternion.Euler(0f, 0f, (diagonal ? direction - 1 : direction) * 45f);
+
+        Vector2 offset = (Vector2)character.SpinBladeOffsetPixels(direction) / 32f;
+        spinBlade.transform.localPosition = new Vector3(offset.x, offset.y, 0f);
+        spinBlade.sortingLayerName = spriteRenderer.sortingLayerName;
+        // Derrière : juste sous le personnage ; devant : juste au-dessus
+        spinBlade.sortingOrder = spriteRenderer.sortingOrder + (character.SpinBladeBehind(direction) ? -1 : 1);
+        spinBlade.enabled = true;
+    }
+
+    // Tant que son rayon existe, le joueur passe au-dessus de lui (départ derrière ses mains) ou dessous (rayon sous une cible collée) ;
+    // ordre normal de son niveau ensuite (rayon détruit : la référence devient nulle)
+    private void UpdateBeamSorting()
+    {
+        if (isFlying || level >= sortingOrderPerLevel.Length)
+            return;
+        int offset = sortingBeam != null ? sortingBeam.ShooterSortingOffset : 0;
+        // Coup d'épée : un cran au-dessus des personnages (rang 0 de la tranche), au rang des techniques
+        if (isSwordInFront)
+            offset = Mathf.Max(offset, 1);
+        spriteRenderer.sortingOrder = sortingOrderPerLevel[level] + offset;
+    }
+
+    private static CellSides SideOf(Vector2 direction)
+    {
+        if (direction == Vector2.up) return CellSides.Up;
+        if (direction == Vector2.down) return CellSides.Down;
+        if (direction == Vector2.left) return CellSides.Left;
+        return CellSides.Right;
+    }
+
+    private void HideSpinBlade()
+    {
+        isSpinning = false;
+        spinBlade.enabled = false;
+    }
+
+    private static readonly Vector2[] SpinSides = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+    private static readonly Vector2[] SpinSidesWithDiagonals =
+    {
+        Vector2.up, Vector2.down, Vector2.left, Vector2.right,
+        new Vector2(1f, 1f), new Vector2(-1f, 1f), new Vector2(-1f, -1f), new Vector2(1f, -1f),
+    };
+
+    // Frappe les 4 cases voisines (8 avec les diagonales, selon la fiche), à son niveau, casse les Destructibles,
+    // puis soigne selon les dégâts réellement infligés
     private void SpinHit()
     {
         var hitTargets = new HashSet<Health>();
         float dealt = 0f;
-        foreach (var side in new[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right })
+        foreach (var side in character.spinHitsDiagonals ? SpinSidesWithDiagonals : SpinSides)
         {
             Vector2 cell = (Vector2)transform.position + side;
             foreach (var hit in Physics2D.OverlapCircleAll(cell, meleeHitRadius, solidObjectsLayer))
@@ -766,7 +865,10 @@ public class PlayerController : MonoBehaviour
     {
         bool isCritical = Random.value < criticalChance;
         float damage = isCritical ? character.swordDamage * criticalMultiplier : character.swordDamage;
+        // L'épée déborde de sa case : dans ces directions, il passe devant les ennemis pendant le coup (UpdateBeamSorting)
+        isSwordInFront = (character.swordInFrontDirections & SideOf(facing)) != 0;
         yield return PlayAttackState(SwordState, meleeHitTime, () => MeleeHit(damage, isCritical));
+        isSwordInFront = false;
         nextBeamTime = Time.time + character.swordCooldown;
     }
 
@@ -1046,6 +1148,8 @@ public class PlayerController : MonoBehaviour
         isDead = true;
         // Coupe les attaques, la transformation et le Kamehameha en cours
         StopAllCoroutines();
+        HideSpinBlade();
+        isSwordInFront = false;
         StartCoroutine(Death());
     }
 

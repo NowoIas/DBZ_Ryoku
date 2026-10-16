@@ -214,6 +214,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c3bf5125a2d3dbb4897c5c058ff24745, type: 2}
   - {fileID: 11400000, guid: 37e1855be7e4cc14cbe7d1e6efe9d7df, type: 2}
   - {fileID: 11400000, guid: f3154729bad72be439360c59c291997e, type: 2}
+  - {fileID: 11400000, guid: f0d1a2e20bcaf9a4b9476fdcd8d1f151, type: 2}
   transformFramesPerSecond: 6
   detransformSpeed: 1.5
   sortingOrderPerLevel: 0000000004000000i

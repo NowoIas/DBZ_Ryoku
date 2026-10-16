@@ -17,8 +17,10 @@ MonoBehaviour:
   transformedControllers:
   - {fileID: 22100000, guid: 3abc43ae07c8b1240a409623f023377f, type: 2}
   transformAtDetransformSpeed: 1
+  transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: -1118479930, guid: fcb54ad224b8fb847b92878e4d95e912, type: 3}
   beamPrefab: {fileID: 0}
+  transformedBeamPrefabs: []
   chargedTechniquePrefab: {fileID: 0}
   chargedBeamPrefab: {fileID: 2334404194698315446, guid: 655a647a8796d30419296bb75da81b03, type: 3}
   paysWithHealth: 1
@@ -28,5 +30,26 @@ MonoBehaviour:
   transformHealthCost: 10
   spinOnE: 1
   spinHealthCost: 5
+  spinKiCost: 5
   spinHealRatio: 0.5
   spinCooldown: 0.5
+  spinSpeed: 1.25
+  spinBladeStraight: {fileID: 0}
+  spinBladeDiagonal: {fileID: 0}
+  spinBladeStepDegrees: 45
+  spinBladeBehindDirections: 14
+  spinBladeRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpOffsetPixels: {x: 0, y: 0}
+  spinBladeUpLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownOffsetPixels: {x: 0, y: 0}
+  spinBladeDownRightOffsetPixels: {x: 0, y: 0}
+  swordOnE: 0
+  swordDamage: 20
+  swordCooldown: 0
+  noTechniqueOnE: 0
+  specialProjectilePrefab: {fileID: 0}
+  specialKiCost: 15
+  specialCooldown: 0.5

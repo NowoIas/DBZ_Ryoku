@@ -61,12 +61,59 @@ namespace DBZ.Player
         [Header("Touche E : toupie au lieu du rayon (Piccolo)")]
         [Tooltip("Il tourne sur lui-même (état Animator Spin) et frappe les 4 cases autour de lui (dégâts du coup normal)")]
         public bool spinOnE;
-        [Tooltip("PV payés à chaque toupie")]
+        [Tooltip("Frappe aussi les 4 cases en diagonale (8 cases autour de lui au lieu de 4 ; Vegeto)")]
+        public bool spinHitsDiagonals;
+        [Tooltip("PV payés à chaque toupie (personnage qui paie en PV, Piccolo)")]
         [Min(0f)] public float spinHealthCost = 5f;
+        [Tooltip("Ki payé à chaque toupie (personnage qui paie en Ki, Vegeto)")]
+        [Min(0f)] public float spinKiCost = 5f;
         [Tooltip("PV regagnés : part du total des dégâts infligés (0,5 = 50 %)")]
         [Min(0f)] public float spinHealRatio = 0.5f;
         [Tooltip("Pause après une toupie (secondes, 0 = aucune)")]
         [Min(0f)] public float spinCooldown = 0f;
+        [Tooltip("Vitesse de la toupie (multiplie celle des clips spin_* : 1 = 12 img/s, 1,25 = 15 img/s). Modifiable en Play ; la lame suit")]
+        [Min(0.05f)] public float spinSpeed = 1.25f;
+
+        [Header("Toupie : lame d'énergie par-dessus le personnage (Vegeto)")]
+        [Tooltip("Lame pointée vers la droite, poignée au centre de l'image (tournée par code pour haut / gauche / bas). Vide = pas de lame")]
+        public Sprite spinBladeStraight;
+        [Tooltip("Lame pointée en haut à droite (tournée par code pour les 3 autres diagonales)")]
+        public Sprite spinBladeDiagonal;
+        [Tooltip("Rotation entre deux images de la toupie (45 = un huitième de tour dans le sens inverse des aiguilles d'une montre ; "
+            + "-45 = sens des aiguilles). La 1re image pointe dans la direction où il regarde")]
+        public float spinBladeStepDegrees = 45f;
+        [Tooltip("Directions où la lame passe derrière le personnage (bras vers le fond)")]
+        public BladeDirections spinBladeBehindDirections = BladeDirections.Up | BladeDirections.UpLeft | BladeDirections.UpRight;
+        [Tooltip("Décalages d'affichage en pixels, par direction de la lame (modifiables en Play, gardés après l'arrêt)")]
+        public Vector2Int spinBladeRightOffsetPixels;
+        public Vector2Int spinBladeUpRightOffsetPixels;
+        public Vector2Int spinBladeUpOffsetPixels;
+        public Vector2Int spinBladeUpLeftOffsetPixels;
+        public Vector2Int spinBladeLeftOffsetPixels;
+        public Vector2Int spinBladeDownLeftOffsetPixels;
+        public Vector2Int spinBladeDownOffsetPixels;
+        public Vector2Int spinBladeDownRightOffsetPixels;
+
+        // Direction 0 = droite, puis un huitième de tour à chaque fois dans le sens inverse des aiguilles d'une montre
+        public Vector2Int SpinBladeOffsetPixels(int direction)
+        {
+            switch (direction)
+            {
+                case 0: return spinBladeRightOffsetPixels;
+                case 1: return spinBladeUpRightOffsetPixels;
+                case 2: return spinBladeUpOffsetPixels;
+                case 3: return spinBladeUpLeftOffsetPixels;
+                case 4: return spinBladeLeftOffsetPixels;
+                case 5: return spinBladeDownLeftOffsetPixels;
+                case 6: return spinBladeDownOffsetPixels;
+                default: return spinBladeDownRightOffsetPixels;
+            }
+        }
+
+        public bool SpinBladeBehind(int direction)
+        {
+            return (spinBladeBehindDirections & (BladeDirections)(1 << direction)) != 0;
+        }
 
         [Header("Touche E : coup d'épée au lieu du rayon (Trunks)")]
         [Tooltip("Frappe la case devant (état Animator Sword, planche s2) ; critique possible comme un coup normal (même chance, dégâts ×2)")]
@@ -74,6 +121,9 @@ namespace DBZ.Player
         [Min(0f)] public float swordDamage = 20f;
         [Tooltip("Pause après un coup d'épée (secondes, 0 = aucune)")]
         [Min(0f)] public float swordCooldown = 0f;
+        [Tooltip("Directions où le personnage passe devant les ennemis pendant le coup d'épée (l'épée déborde de sa case). "
+            + "Ailleurs (bas) : ordre normal, l'ennemi en dessous reste devant")]
+        public DBZ.World.CellSides swordInFrontDirections = DBZ.World.CellSides.Up | DBZ.World.CellSides.Left | DBZ.World.CellSides.Right;
 
         [Header("Touche E désactivée (Trunks enfant)")]
         [Tooltip("La touche E ne fait rien (personnage sans technique E)")]
@@ -87,5 +137,20 @@ namespace DBZ.Player
         [Min(0f)] public float specialKiCost = 15f;
         [Tooltip("Pause après un tir (secondes, 0 = aucune)")]
         [Min(0f)] public float specialCooldown = 0.5f;
+    }
+
+    // Les 8 directions de la lame de la toupie (même ordre que CharacterData.SpinBladeOffsetPixels), combinables
+    [System.Flags]
+    public enum BladeDirections
+    {
+        None = 0,
+        Right = 1 << 0,
+        UpRight = 1 << 1,
+        Up = 1 << 2,
+        UpLeft = 1 << 3,
+        Left = 1 << 4,
+        DownLeft = 1 << 5,
+        Down = 1 << 6,
+        DownRight = 1 << 7,
     }
 }
