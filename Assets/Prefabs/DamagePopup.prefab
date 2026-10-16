@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &480103872525314473
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 891652232056566746}
+  - component: {fileID: 5897258830044289627}
+  m_Layer: 0
+  m_Name: DamagePopup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &891652232056566746
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480103872525314473}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5897258830044289627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480103872525314473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e86b45467a48b541ac088313374a815, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.DamagePopup
+  digitSprites:
+  - {fileID: -4267824655601238369, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: -7610335838860586245, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: 4921081859553773598, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: 3250774946372296175, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: 506605902, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: 1545119627, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: -671854235, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: 2144674592, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: -630950919, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  - {fileID: -1389257585, guid: e243ae8e6461c2a4598d27a59ece7668, type: 3}
+  criticalDigitSprites:
+  - {fileID: 482451003178356373, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: -2885837974997623015, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: 1300991235072489123, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: -9051854217082914908, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: 4241668189012353744, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: -7925967132376463911, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: 5760896169576452871, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: 8854123940569147026, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: 2008193312928405316, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  - {fileID: -6756360499593863685, guid: 2d161d5ba1eede647907ddd9a6b6372f, type: 3}
+  healDigitSprites:
+  - {fileID: 5966564266467738723, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -4276309902104541547, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -3122809834476119187, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -8592446540316038306, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: 1590776803714824318, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: 7713911584009441155, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -7692155721321438098, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -7264061018389865703, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: -2101027033012400661, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  - {fileID: 3652318504674186423, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  digitSpacing: -1
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  duration: 0.8
+  riseDistance: 0.5
+  criticalRiseDistance: 0.75
+  fadeStart: 0.5
+  sortingLayerName: foreground
+  sortingOrder: 100

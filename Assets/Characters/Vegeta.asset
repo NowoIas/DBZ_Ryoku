@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: Vegeta
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Vegeta
+  animatorController: {fileID: 22100000, guid: 36c88c95cfb75ee4f820f0baf8e72900, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: f195d5f1261667548a4e39c7edaf3310, type: 2}
+  - {fileID: 22100000, guid: 7124418ad3e62f9438973b8779536496, type: 2}
+  startSprite: {fileID: -1082265770, guid: fee44220786e78e44be4b4e233d858e8, type: 3}
+  beamPrefab: {fileID: 2334404194698315446, guid: 5bc81d66f1be88b4f94870363bcec3a3, type: 3}
+  chargedTechniquePrefab: {fileID: 8965904297160293597, guid: a112e0d3e449b984aa3feb7f405683b6, type: 3}

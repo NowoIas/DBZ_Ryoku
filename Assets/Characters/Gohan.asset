@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: Gohan
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Gohan
+  animatorController: {fileID: 22100000, guid: 8f2c1bbb0bc1bec46bb670abf78cc702, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: f47db0e2a86d7f94780ad591794b8801, type: 2}
+  - {fileID: 22100000, guid: e49904d54e220784dbfc6bd126aec69d, type: 2}
+  transformAtDetransformSpeed: 0
+  startSprite: {fileID: 606339201, guid: 448b05ef5abe1204f8d360b02479cd91, type: 3}
+  beamPrefab: {fileID: 2334404194698315446, guid: c0f801c6c8d1d014c93c44b2c3c4b66e, type: 3}
+  chargedTechniquePrefab: {fileID: 239795273294945934, guid: 280c906ee0426044787af05f36cff1f9, type: 3}
+  chargedBeamPrefab: {fileID: 0}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 0
+  spinHealthCost: 5
+  spinHealRatio: 0.5
+  spinCooldown: 0

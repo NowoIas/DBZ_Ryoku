@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7871213969532897381
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 348939185569006019}
+  - component: {fileID: 2334404194698315446}
+  m_Layer: 0
+  m_Name: KamehamehaGohanUlt
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &348939185569006019
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7871213969532897381}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2334404194698315446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7871213969532897381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 550f5a77dbd5bf5479bfebd65c427e50, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.KamehamehaBeam
+  startSprite: {fileID: 0}
+  startSprites:
+  - {fileID: -5668106485634874248, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  - {fileID: -5282907772695554514, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  impactSprites:
+  - {fileID: -3000421951850123062, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  - {fileID: 6933584859765218128, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  releaseTrailSprite: {fileID: 0}
+  headSprite: {fileID: 0}
+  headSprites:
+  - {fileID: -3273624268145012662, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  - {fileID: 7636086057080099455, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  bodySprite: {fileID: 3605329455987744840, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  bodySprites:
+  - {fileID: 3605329455987744840, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  - {fileID: -7152513862730980632, guid: baacbdfbcca248e4f82f6a5dc2124b7c, type: 3}
+  animationFramesPerSecond: 8
+  upOffsetPixels: {x: -1, y: -4}
+  downOffsetPixels: {x: 1, y: 10}
+  leftOffsetPixels: {x: 7, y: -3}
+  rightOffsetPixels: {x: -7, y: -1}
+  maxLength: 10
+  cellsPerSecond: 30
+  segmentsPerCell: 2
+  damage: 10
+  damageInterval: 0.25
+  hitLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  hitRadius: 0.3
+  canDestroyObstacles: 1
+  piercesTargets: 0
+  impactAtTip: 0
+  targetOverlapPixels: 8
+  openDuration: 0
+  closeDuration: 0
+  cooldown: 1
+  sortingLayerName: player
+  sortingOrder: 1
+  startBehindPlayerDirections: 13
+  tipBehindTargetDirections: 2

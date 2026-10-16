@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: GohanUlt
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Gohan Ultime
+  animatorController: {fileID: 22100000, guid: 958fc7e7b7cf7fc4dbe426a909b7ed1e, type: 2}
+  transformedControllers: []
+  transformAtDetransformSpeed: 0
+  startSprite: {fileID: -774844874, guid: 659c3464ec1cc5246b649a29598b5999, type: 3}
+  beamPrefab: {fileID: 2334404194698315446, guid: 5e0d3b3d3683e454c8d1cfd7367d21bf, type: 3}
+  transformedBeamPrefabs: []
+  chargedTechniquePrefab: {fileID: 239795273294945934, guid: 280c906ee0426044787af05f36cff1f9, type: 3}
+  chargedBeamPrefab: {fileID: 0}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 0
+  spinHealthCost: 5
+  spinHealRatio: 0.5
+  spinCooldown: 0
