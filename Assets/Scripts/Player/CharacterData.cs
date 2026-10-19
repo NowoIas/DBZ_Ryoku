@@ -143,14 +143,17 @@ namespace DBZ.Player
             + "Coût, dégâts, pause et images réglés dans le prefab. Vide = autre technique R")]
         public DBZ.Combat.DragonFist dragonFistPrefab;
 
-        [Header("Touche é : fusion (Goten → Gotenks)")]
-        [Tooltip("Personnage obtenu par la fusion (animation fusion, planche tr2), depuis la forme normale seulement. "
+        [Header("Touche é : fusion (Goten → Gotenks, Goku / Vegeta → Gogeta)")]
+        [Tooltip("Personnage obtenu par la fusion (animation fusion, planche tr2), depuis une forme qui a son clip fusion. "
             + "Espace (en forme normale) ou fin du chrono : retour à ce personnage-ci. Vide = pas de fusion")]
         public CharacterData fusionCharacter;
         [Tooltip("Ki payé pour fusionner")]
         [Min(0f)] public float fusionKiCost = 50f;
         [Tooltip("Durée de la fusion (secondes), affichée par un chrono dans le HUD")]
         [Min(1f)] public float fusionDuration = 180f;
+        [Tooltip("Séparation jouée par le personnage fusionné avant de revenir à ce personnage-ci (planche tr0<perso> du fusionné). "
+            + "Vide = clip fusion du fusionné")]
+        public AnimationClip separationClip;
 
         [Header("Touche R : coup de poing qui étourdit (Goten)")]
         [Tooltip("Frappe la case devant (état Animator SpecialShot, planche s3), critique possible ; la cible est étourdie "

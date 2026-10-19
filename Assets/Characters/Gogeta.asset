@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: Gogeta
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
   displayName: Gogeta
-  animatorController: {fileID: 22100000, guid: fe6df5513e0c4c54591b3b1a8f6dbd2f, type: 2}
-  transformedControllers: []
+  animatorController: {fileID: 22100000, guid: 194630aeacc07884da5631685648f9e3, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: fe6df5513e0c4c54591b3b1a8f6dbd2f, type: 2}
   transformAtDetransformSpeed: 0
   transformAtDetransformSpeedPerStage: 
-  startSprite: {fileID: -111107308, guid: cca4dcfae44e6da45a89464c5865d5e0, type: 3}
+  startSprite: {fileID: -262166062, guid: ce8eaeb74e901774abdccc7a57960cfa, type: 3}
   beamPrefab: {fileID: 2334404194698315446, guid: 6530d39434f59b44d93aac553d950fe7, type: 3}
   transformedBeamPrefabs: []
   chargedTechniquePrefab: {fileID: 0}
@@ -55,3 +56,19 @@ MonoBehaviour:
   specialKiCost: 15
   specialCooldown: 0.5
   dragonFistPrefab: {fileID: 4947819951624893607, guid: 7052b7f73814c334b94f0e8fcef729be, type: 3}
+  fusionCharacter: {fileID: 0}
+  fusionKiCost: 50
+  fusionDuration: 180
+  stunPunchOnR: 0
+  stunPunchDamage: 15
+  stunDuration: 2
+  stunIcon: {fileID: 0}
+  stunPunchKiCost: 10
+  stunPunchCooldown: 1
+  stunPunchHitTime: 0.25
+  projectileOnE: {fileID: 0}
+  projectileOnEKiCost: 15
+  projectileOnECooldown: 1
+  ghostController: {fileID: 0}
+  transformedGhostControllers: []
+  ghostKiCost: 20

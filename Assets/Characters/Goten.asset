@@ -59,6 +59,7 @@ MonoBehaviour:
   fusionCharacter: {fileID: 11400000, guid: b62191a1d07e2d14fa4d408852392a7a, type: 2}
   fusionKiCost: 50
   fusionDuration: 180
+  separationClip: {fileID: 7400000, guid: abaeb85e08147fe4fbc0c40a2fd4cc1f, type: 2}
   stunPunchOnR: 1
   stunPunchDamage: 15
   stunDuration: 2

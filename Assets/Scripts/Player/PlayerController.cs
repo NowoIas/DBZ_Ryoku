@@ -202,6 +202,8 @@ public class PlayerController : MonoBehaviour
     private static readonly int SwordState = Animator.StringToHash("Sword");
     private static readonly int SpecialShotState = Animator.StringToHash("SpecialShot");
     private static readonly int FusionState = Animator.StringToHash("Fusion");
+    // Nom du clip de base de l'état Fusion (clé des Override Controllers)
+    private const string FusionClipName = "fusion";
     private static readonly int TransformSpeed = Animator.StringToHash("transformSpeed");
     private static readonly int DetransformSpeed = Animator.StringToHash("detransformSpeed");
     private static readonly int SpinSpeed = Animator.StringToHash("spinSpeed");
@@ -458,15 +460,17 @@ public class PlayerController : MonoBehaviour
                     }
                 }
             }
-            // Fin de la fusion : chrono écoulé (quelle que soit la forme), ou Espace en forme normale (en SSJ, Espace fait d'abord
+            // Fin de la fusion, en forme normale : Espace ou chrono écoulé (en SSJ, Espace ou le chrono font d'abord
             // revenir en forme normale, ci-dessous)
-            else if (IsFused && (Time.time >= PlayerState.FusionEndTime
-                                 || (detransformPressed && ki.CurrentForm == PlayerKi.Form.Normal)))
+            else if (IsFused && ki.CurrentForm == PlayerKi.Form.Normal
+                     && (detransformPressed || Time.time >= PlayerState.FusionEndTime))
             {
-                EndFusion();
+                StartCoroutine(Separation());
             }
-            // Retour à la forme normale : volontaire, ou forcé quand le Ki est épuisé (après l'atterrissage si Goku vole)
-            else if (ki.CurrentForm == PlayerKi.Form.Transformed && (detransformPressed || ki.IsDepleted))
+            // Retour à la forme normale : volontaire, forcé quand le Ki est épuisé (après l'atterrissage si Goku vole),
+            // ou chrono de la fusion écoulé
+            else if (ki.CurrentForm == PlayerKi.Form.Transformed
+                     && (detransformPressed || ki.IsDepleted || (IsFused && Time.time >= PlayerState.FusionEndTime)))
             {
                 StartCoroutine(Detransformation());
             }
@@ -516,9 +520,12 @@ public class PlayerController : MonoBehaviour
             {
                 StartCoroutine(Transformation());
             }
-            // Fusion (Goten → Gotenks) : depuis la forme normale seulement, au sol
+            // Fusion (Goten → Gotenks, Goku / Vegeta → Gogeta) : en forme normale, ou transformée si la forme a sa propre
+            // animation de fusion (Goten SSJ → Gotenks SSJ), au sol
             else if (fusionPressed && character != null && character.fusionCharacter != null
-                     && ki.CurrentForm == PlayerKi.Form.Normal && ki.CanSpend(character.fusionKiCost))
+                     && (ki.CurrentForm == PlayerKi.Form.Normal
+                         || (ki.CurrentForm == PlayerKi.Form.Transformed && FormHasOwnFusionClip()))
+                     && ki.CanSpend(character.fusionKiCost))
             {
                 StartCoroutine(Fusion());
             }
@@ -1264,8 +1271,8 @@ public class PlayerController : MonoBehaviour
     public bool IsFused => PlayerState.FusionOrigin != null;
     public float FusionTimeLeft => IsFused ? Mathf.Max(0f, PlayerState.FusionEndTime - Time.time) : -1f;
 
-    // Goten (touche é) : paie le Ki, joue la fusion (état Fusion, planche tr2, au rythme des transformations), puis devient Gotenks
-    // en forme normale ; le personnage d'origine est gardé pour la séparation
+    // Goten (touche é) : paie le Ki, joue la fusion (état Fusion, planche tr2 de sa forme, au rythme des transformations), puis
+    // devient Gotenks dans le même palier (Goten SSJ → Gotenks SSJ, jauges gardées) ; le personnage d'origine est gardé pour la séparation
     IEnumerator Fusion()
     {
         if (!ki.TryStartKiBlast(character.fusionKiCost))
@@ -1279,10 +1286,50 @@ public class PlayerController : MonoBehaviour
         PlayerState.FusionOrigin = character;
         PlayerState.FusionEndTime = Time.time + character.fusionDuration;
         SetCharacter(character.fusionCharacter);
+        if (ki.Level > 0 && ki.Level <= transformedControllers.Length)
+            SwitchController(transformedControllers[ki.Level - 1]);
         Face(Vector2.down);
     }
 
-    // Séparation, sans animation pour l'instant : retour au personnage d'origine en forme normale (depuis un palier si le chrono s'écoule)
+    // Séparation animée (forme normale) : le personnage fusionné n'a pas de fusion, son état Fusion porte donc la séparation.
+    // Elle dépend du personnage d'origine (Gogeta : tr0goku ou tr0vegeta) : separationClip de sa fiche, posé sur un
+    // Override Controller temporaire (remplacé par celui du personnage d'origine à la fin)
+    IEnumerator Separation()
+    {
+        Face(Vector2.down);
+        var separationClip = PlayerState.FusionOrigin.separationClip;
+        if (separationClip != null && animator.runtimeAnimatorController is AnimatorOverrideController current)
+        {
+            var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+            current.GetOverrides(overrides);
+            for (int i = 0; i < overrides.Count; i++)
+                if (overrides[i].Key.name == FusionClipName)
+                    overrides[i] = new KeyValuePair<AnimationClip, AnimationClip>(overrides[i].Key, separationClip);
+            var separation = new AnimatorOverrideController(current.runtimeAnimatorController);
+            separation.ApplyOverrides(overrides);
+            SwitchController(separation);
+            Face(Vector2.down);
+        }
+        animator.SetFloat(TransformSpeed, transformFramesPerSecond / TransformClipFramesPerSecond);
+        yield return PlayAttackState(FusionState, 1f, null);
+        EndFusion();
+    }
+
+    // Forme transformée : a-t-elle sa propre animation de fusion (clip fusion remplacé dans son Override Controller) ?
+    // Sinon elle jouerait celle de la forme normale (Goku SSJ : fusion de Goku normal)
+    private bool FormHasOwnFusionClip()
+    {
+        if (!(animator.runtimeAnimatorController is AnimatorOverrideController current))
+            return true;
+        var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+        current.GetOverrides(overrides);
+        foreach (var pair in overrides)
+            if (pair.Key.name == FusionClipName)
+                return pair.Value != null;
+        return false;
+    }
+
+    // Retour au personnage d'origine en forme normale (sans animation : la mort ou F2 passent par ailleurs)
     private void EndFusion()
     {
         if (ki.CurrentForm != PlayerKi.Form.Normal)

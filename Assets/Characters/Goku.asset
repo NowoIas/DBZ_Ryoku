@@ -17,4 +17,60 @@ MonoBehaviour:
   transformedControllers:
   - {fileID: 22100000, guid: 941527886f79c9a4ea2981552b235704, type: 2}
   - {fileID: 22100000, guid: 715d07f2c970d5b4ca8f00bc42c92959, type: 2}
+  transformAtDetransformSpeed: 0
+  transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: 1600497784, guid: 29dc3c1ddff730742a6d6b6beb5464f5, type: 3}
+  beamPrefab: {fileID: 0}
+  transformedBeamPrefabs: []
+  chargedTechniquePrefab: {fileID: 0}
+  chargedBeamPrefab: {fileID: 0}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 0
+  spinHitsDiagonals: 0
+  spinHealthCost: 5
+  spinKiCost: 5
+  spinHealRatio: 0.5
+  spinCooldown: 0
+  spinSpeed: 1.25
+  spinBladeStraight: {fileID: 0}
+  spinBladeDiagonal: {fileID: 0}
+  spinBladeStepDegrees: 45
+  spinBladeBehindDirections: 14
+  spinBladeRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpOffsetPixels: {x: 0, y: 0}
+  spinBladeUpLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownOffsetPixels: {x: 0, y: 0}
+  spinBladeDownRightOffsetPixels: {x: 0, y: 0}
+  swordOnE: 0
+  swordDamage: 20
+  swordCooldown: 0
+  swordInFrontDirections: 13
+  noTechniqueOnE: 0
+  specialProjectilePrefab: {fileID: 0}
+  specialKiCost: 15
+  specialCooldown: 0.5
+  dragonFistPrefab: {fileID: 0}
+  fusionCharacter: {fileID: 11400000, guid: effcc00ccff5d0b45abbabaac6622a1b, type: 2}
+  fusionKiCost: 50
+  fusionDuration: 180
+  separationClip: {fileID: 7400000, guid: 05d6a7b80f6131d4c8d5d3c086c1e7a2, type: 2}
+  stunPunchOnR: 0
+  stunPunchDamage: 15
+  stunDuration: 2
+  stunIcon: {fileID: 0}
+  stunPunchKiCost: 10
+  stunPunchCooldown: 1
+  stunPunchHitTime: 0.25
+  projectileOnE: {fileID: 0}
+  projectileOnEKiCost: 15
+  projectileOnECooldown: 1
+  ghostController: {fileID: 0}
+  transformedGhostControllers: []
+  ghostKiCost: 20
