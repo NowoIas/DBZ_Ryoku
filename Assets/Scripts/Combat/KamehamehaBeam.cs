@@ -39,6 +39,24 @@ namespace DBZ.Combat
         [SerializeField] private Vector2Int leftOffsetPixels = new Vector2Int(0, -2);
         [SerializeField] private Vector2Int rightOffsetPixels = Vector2Int.zero;
 
+        [Header("Départ dessiné par direction, non tourné (Big Bang Kamehameha ; vide = aucun)")]
+        [Tooltip("Images du départ vers le haut, en alternance (posées sur la case devant le personnage, plus le décalage)")]
+        [SerializeField] private Sprite[] launchSpritesUp = new Sprite[0];
+        [SerializeField] private Sprite[] launchSpritesDown = new Sprite[0];
+        [SerializeField] private Sprite[] launchSpritesLeft = new Sprite[0];
+        [SerializeField] private Sprite[] launchSpritesRight = new Sprite[0];
+        [Tooltip("Décalage du départ, en pixels (x vers la droite, y vers le haut), depuis le centre de la case devant le personnage")]
+        [SerializeField] private Vector2Int launchUpOffsetPixels = Vector2Int.zero;
+        [SerializeField] private Vector2Int launchDownOffsetPixels = Vector2Int.zero;
+        [SerializeField] private Vector2Int launchLeftOffsetPixels = Vector2Int.zero;
+        [SerializeField] private Vector2Int launchRightOffsetPixels = Vector2Int.zero;
+        [Tooltip("Morceaux du rayon cachés sous le départ, depuis le personnage (2 = la case devant lui, à 2 morceaux par case)")]
+        [Min(0)]
+        [SerializeField] private int launchCoveredSegments = 2;
+        [Tooltip("Rayon arrêté tout près (ennemi, bloc, mur) : l'image du départ est coupée là où commence l'impact, pour ne pas "
+            + "dépasser derrière lui. Ces pixels avancent (positif) ou reculent (négatif) la coupure ; la moitié côté personnage reste entière")]
+        [SerializeField] private int launchCutMarginPixels = 0;
+
         [Header("Portée")]
         [SerializeField] private int maxLength = 10;
         [Tooltip("Vitesse à laquelle le rayon pousse, puis à laquelle la traînée l'efface (cases par seconde)")]
@@ -107,6 +125,12 @@ namespace DBZ.Combat
         private SpriteRenderer endFiller;
         // Bout de corps raccourci devant le départ, quand lui seul est affiché devant la cible (Final Flash à une case libre)
         private SpriteRenderer tipExtension;
+        // Départ dessiné par direction (Big Bang Kamehameha), null sinon ; ses images, selon la direction du tir
+        private SpriteRenderer launch;
+        private Sprite[] launchSprites;
+        // Images du départ raccourcies (image d'origine, longueur gardée en pixels), créées une fois puis réutilisées
+        private readonly System.Collections.Generic.Dictionary<(Sprite, int), Sprite> cutLaunchSprites =
+            new System.Collections.Generic.Dictionary<(Sprite, int), Sprite>();
         // Position locale de chaque morceau sans avancée du bout
         private Vector3[] segmentPositions;
         // Niveau de chaque case du rayon : son ordre d'affichage en dépend (sous le pont au sol, dessus en haut)
@@ -190,7 +214,37 @@ namespace DBZ.Combat
                 tipExtension.enabled = false;
             }
 
+            // Départ par direction : image non tournée (le rayon l'est), posée sur la case devant le personnage
+            launchSprites = LaunchSprites(dir);
+            if (launchSprites.Length > 0)
+            {
+                launch = new GameObject("Launch").AddComponent<SpriteRenderer>();
+                launch.transform.SetParent(transform, false);
+                launch.transform.rotation = Quaternion.identity;
+                Vector2 launchOffset = (Vector2)LaunchOffsetPixels(dir) / 32f;
+                launch.transform.position = transform.position + new Vector3(launchOffset.x, launchOffset.y, 0f);
+                launch.sortingLayerName = sortingLayerName;
+                launch.enabled = false;
+            }
+
             grown = 1f;
+        }
+
+        private Sprite[] LaunchSprites(Vector2 dir)
+        {
+            if (dir == Vector2.up) return launchSpritesUp;
+            if (dir == Vector2.down) return launchSpritesDown;
+            if (dir == Vector2.left) return launchSpritesLeft;
+            return launchSpritesRight;
+        }
+
+        // Relu à chaque image : réglable dans l'Inspector pendant le tir
+        private Vector2Int LaunchOffsetPixels(Vector2 dir)
+        {
+            if (dir == Vector2.up) return launchUpOffsetPixels;
+            if (dir == Vector2.down) return launchDownOffsetPixels;
+            if (dir == Vector2.left) return launchLeftOffsetPixels;
+            return launchRightOffsetPixels;
         }
 
         private Vector2Int HandOffsetPixels(Vector2 dir)
@@ -317,6 +371,8 @@ namespace DBZ.Combat
                 ShooterSortingOffset = 0;
             UpdateSprites(visibleSegments, isHitting, trailIndex, underTarget);
             UpdateTipOverlap(visibleSegments, reachesTarget && !(IsReleased && trailIndex >= visibleSegments - 1));
+            // Après l'avancée du bout : la coupure du départ suit la position réelle de l'impact
+            UpdateLaunch(visibleSegments, trailIndex, underTarget, isHitting);
         }
 
         // Toutes les cases se referment en même temps, sur place
@@ -324,6 +380,8 @@ namespace DBZ.Combat
         {
             float closing = 1f - Mathf.Clamp01((Time.time - releaseTime) / closeDuration);
             bool anyOpen = false;
+            if (launch != null)
+                launch.enabled = false;
             for (int i = 0; i < cells.Length; i++)
             {
                 var sr = cells[i];
@@ -496,8 +554,83 @@ namespace DBZ.Combat
                 else
                     sr.sprite = CurrentBody();
                 SetThickness(sr, OpenFactor(i));
+                // Morceaux cachés sous le départ dessiné par direction (sauf l'impact, collé à une cible)
+                if (launch != null && i < launchCoveredSegments && !(i == last && isHitting))
+                    sr.enabled = false;
             }
             UpdateStartFiller();
+        }
+
+        // Départ dessiné par direction : affiché tant que la traînée ne l'a pas atteint, à l'ordre du 1er morceau.
+        // Rayon arrêté : coupé au début de l'impact s'il dépasse (sa partie rayon continuait derrière l'impact)
+        private void UpdateLaunch(int visible, int trailIndex, bool underTarget, bool isHitting)
+        {
+            if (launch == null)
+                return;
+            launch.enabled = visible > 0 && !(IsReleased && trailIndex > 0);
+            if (!launch.enabled)
+                return;
+            Sprite sprite = launchSprites[(int)(Time.time * animationFramesPerSecond) % launchSprites.Length];
+            Vector2 offset = (Vector2)LaunchOffsetPixels(direction) / 32f;
+            launch.transform.position = transform.position + new Vector3(offset.x, offset.y, 0f);
+            launch.sortingOrder = underTarget
+                ? cellLevels[0] * LevelMap.SortingOrdersPerLevel - 1
+                : sortingOrder + cellLevels[0] * LevelMap.SortingOrdersPerLevel;
+
+            if (isHitting && sprite != null)
+            {
+                // Début de l'impact (bord arrière du dernier morceau), dans le sens du tir, depuis le centre du départ, en pixels
+                int last = visible - 1;
+                float impactStart = cells[last].transform.localPosition.x - 0.5f / segmentsPerCell;
+                float launchCenter = Vector2.Dot(offset, direction);
+                int keep = Mathf.RoundToInt((impactStart - launchCenter) * 32f) + launchCutMarginPixels;
+                sprite = CutLaunch(sprite, keep);
+            }
+            launch.sprite = sprite;
+        }
+
+        // Image du départ raccourcie côté tir : garde sa moitié côté personnage plus keep pixels au-delà du centre
+        // (même position à l'écran : seul le bout disparaît). keep au moins la moitié de l'image : rien n'est coupé
+        private Sprite CutLaunch(Sprite sprite, int keep)
+        {
+            Rect rect = sprite.rect;
+            bool vertical = direction.y != 0f;
+            float half = (vertical ? rect.height : rect.width) / 2f;
+            keep = Mathf.Max(0, keep);
+            if (keep >= half)
+                return sprite;
+            if (cutLaunchSprites.TryGetValue((sprite, keep), out var cut))
+                return cut;
+
+            // Côté tir : droite / haut = fin du rectangle ; gauche / bas = début (on décale son origine)
+            float length = half + keep;
+            bool farIsEnd = direction.x > 0f || direction.y > 0f;
+            Rect cutRect = rect;
+            Vector2 pivot;
+            if (vertical)
+            {
+                cutRect.height = length;
+                if (!farIsEnd)
+                    cutRect.y += half - keep;
+                pivot = new Vector2(0.5f, (farIsEnd ? half : keep) / length);
+            }
+            else
+            {
+                cutRect.width = length;
+                if (!farIsEnd)
+                    cutRect.x += half - keep;
+                pivot = new Vector2((farIsEnd ? half : keep) / length, 0.5f);
+            }
+            cut = Sprite.Create(sprite.texture, cutRect, pivot, sprite.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            cut.name = sprite.name + "_coupe";
+            cutLaunchSprites[(sprite, keep)] = cut;
+            return cut;
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var cut in cutLaunchSprites.Values)
+                Destroy(cut);
         }
 
         // Bout du rayon avancé de targetOverlapPixels dans la case de la cible ; les autres morceaux restent à leur place

@@ -111,6 +111,8 @@ namespace DBZ.Enemies
         private float nextWanderTime;
         // Vitesse du pas en cours (poursuite ou promenade)
         private float currentSpeed;
+        // Ballon à l'image précédente : l'arrêt (Freeze) n'est fait qu'une fois
+        private bool wasLocked;
 
         private void Awake()
         {
@@ -151,6 +153,16 @@ namespace DBZ.Enemies
 
         private void Update()
         {
+            // Transformé en ballon (Volleyball de Gotenks) : ni déplacement ni attaque tant que ça dure
+            if (StatusEffects.IsLockedOn(gameObject))
+            {
+                if (!wasLocked)
+                    Freeze();
+                wasLocked = true;
+                return;
+            }
+            wasLocked = false;
+
             if (isMoving)
                 Advance(currentSpeed * Time.deltaTime);
 
@@ -394,6 +406,21 @@ namespace DBZ.Enemies
                     return false;
             }
             return true;
+        }
+
+        // Attaque en cours coupée ; pas en cours : il finit sur la case visée (son collider y est déjà), pour rester sur une case
+        private void Freeze()
+        {
+            StopAllCoroutines();
+            isAttacking = false;
+            if (isMoving)
+            {
+                transform.position = moveTarget;
+                isMoving = false;
+                int newLevel = LevelMap.LevelAfterEntering(moveTarget, level);
+                if (newLevel != level)
+                    SetLevel(newLevel);
+            }
         }
 
         private void Advance(float distance)

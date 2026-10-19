@@ -215,6 +215,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 37e1855be7e4cc14cbe7d1e6efe9d7df, type: 2}
   - {fileID: 11400000, guid: f3154729bad72be439360c59c291997e, type: 2}
   - {fileID: 11400000, guid: f0d1a2e20bcaf9a4b9476fdcd8d1f151, type: 2}
+  - {fileID: 11400000, guid: effcc00ccff5d0b45abbabaac6622a1b, type: 2}
+  - {fileID: 11400000, guid: b62191a1d07e2d14fa4d408852392a7a, type: 2}
+  - {fileID: 11400000, guid: 55e8ae50f6f87fd45b1b3fb30a806d5e, type: 2}
   transformFramesPerSecond: 6
   detransformSpeed: 1.5
   sortingOrderPerLevel: 0000000004000000i

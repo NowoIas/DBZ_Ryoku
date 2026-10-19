@@ -137,6 +137,55 @@ namespace DBZ.Player
         [Min(0f)] public float specialKiCost = 15f;
         [Tooltip("Pause après un tir (secondes, 0 = aucune)")]
         [Min(0f)] public float specialCooldown = 0.5f;
+
+        [Header("Touche R : poing du dragon (Gogeta)")]
+        [Tooltip("Appui sur R : le poing part, mord au bout puis revient (état Animator SpecialShot, planche s3). "
+            + "Coût, dégâts, pause et images réglés dans le prefab. Vide = autre technique R")]
+        public DBZ.Combat.DragonFist dragonFistPrefab;
+
+        [Header("Touche é : fusion (Goten → Gotenks)")]
+        [Tooltip("Personnage obtenu par la fusion (animation fusion, planche tr2), depuis la forme normale seulement. "
+            + "Espace (en forme normale) ou fin du chrono : retour à ce personnage-ci. Vide = pas de fusion")]
+        public CharacterData fusionCharacter;
+        [Tooltip("Ki payé pour fusionner")]
+        [Min(0f)] public float fusionKiCost = 50f;
+        [Tooltip("Durée de la fusion (secondes), affichée par un chrono dans le HUD")]
+        [Min(1f)] public float fusionDuration = 180f;
+
+        [Header("Touche R : coup de poing qui étourdit (Goten)")]
+        [Tooltip("Frappe la case devant (état Animator SpecialShot, planche s3), critique possible ; la cible est étourdie "
+            + "(immobile, n'attaque plus, figée sur son image, icône au-dessus)")]
+        public bool stunPunchOnR;
+        [Min(0f)] public float stunPunchDamage = 15f;
+        [Tooltip("Durée de l'étourdissement (secondes ; un nouveau coup la fait repartir de zéro)")]
+        [Min(0f)] public float stunDuration = 2f;
+        [Tooltip("Icône de l'état, sur la case au-dessus de la cible")]
+        public Sprite stunIcon;
+        [Min(0f)] public float stunPunchKiCost = 10f;
+        [Tooltip("Pause après le coup (secondes, 0 = aucune)")]
+        [Min(0f)] public float stunPunchCooldown = 1f;
+        [Tooltip("Moment du coup dans l'animation (0 = début, 1 = fin ; 0,25 = 2e image sur 4)")]
+        [Range(0f, 1f)] public float stunPunchHitTime = 0.25f;
+
+        [Header("Touche E : tir au lieu du rayon (Gotenks : Volleyball)")]
+        [Tooltip("Un appui : projectile lancé comme un Ki Blast (état Animator SpecialShot, planche s2). "
+            + "Dégâts, portée, images et effet (ballon) réglés dans le prefab. Vide = rayon (Beam Prefab)")]
+        public Projectile projectileOnE;
+        [Tooltip("Ki payé à chaque tir")]
+        [Min(0f)] public float projectileOnEKiCost = 15f;
+        [Tooltip("Pause après un tir (secondes, 0 = aucune)")]
+        [Min(0f)] public float projectileOnECooldown = 1f;
+
+        [Header("Touche R : devient un fantôme (Gotenks : Ghost)")]
+        [Tooltip("Animations du fantôme (Override Controller). La touche R joue la transformation (clip transform, planche s3), "
+            + "puis le joueur devient le fantôme : il se déplace comme en vol, à la vitesse du vol, sans attaquer. "
+            + "Espace : retour (clip detransform du fantôme). Vide = autre technique R")]
+        public AnimatorOverrideController ghostController;
+        [Tooltip("Fantôme propre à chaque palier, dans l'ordre de Transformed Controllers (son retour joue le s3 de la forme). "
+            + "Case vide ou absente = Ghost Controller")]
+        public AnimatorOverrideController[] transformedGhostControllers = new AnimatorOverrideController[0];
+        [Tooltip("Ki payé en devenant fantôme (ensuite, aucune consommation ni limite de durée)")]
+        [Min(0f)] public float ghostKiCost = 20f;
     }
 
     // Les 8 directions de la lame de la toupie (même ordre que CharacterData.SpinBladeOffsetPixels), combinables

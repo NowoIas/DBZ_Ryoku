@@ -36,6 +36,23 @@ public class Projectile : MonoBehaviour
     [Min(0.1f)]
     public float loopCellsPerFrame = 1f;
 
+    // Images dessinées vers la droite (Frames Right), tournées selon la direction du tir (Volleyball de Gotenks) ;
+    // décochée : une liste d'images par direction
+    public bool rotateWithDirection = false;
+    // Décalage du projectile à son départ, en pixels (x vers la droite, y vers le haut), selon la direction du tir
+    public Vector2Int upOffsetPixels;
+    public Vector2Int downOffsetPixels;
+    public Vector2Int leftOffsetPixels;
+    public Vector2Int rightOffsetPixels;
+
+    // Ennemi ou cible touché : transformé en ballon pendant ce temps (secondes, 0 = non), sans impact ;
+    // un obstacle garde l'impact (Volleyball de Gotenks)
+    [Min(0f)]
+    public float lockDuration = 0f;
+    public Sprite lockSprite;
+    // Icône de l'état, sur la case au-dessus de la cible
+    public Sprite lockIcon;
+
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
 
@@ -59,10 +76,15 @@ public class Projectile : MonoBehaviour
         baseSortingOrder = spriteRenderer.sortingOrder;
         SetLevel(launchLevel);
 
-        if (dir.y > 0) frames = framesUp;
+        if (rotateWithDirection) frames = framesRight;
+        else if (dir.y > 0) frames = framesUp;
         else if (dir.y < 0) frames = framesDown;
         else if (dir.x < 0) frames = framesLeft;
         else frames = framesRight;
+        if (rotateWithDirection)
+            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+        Vector2Int offset = dir.y > 0 ? upOffsetPixels : dir.y < 0 ? downOffsetPixels : dir.x < 0 ? leftOffsetPixels : rightOffsetPixels;
+        transform.position += new Vector3(offset.x, offset.y, 0f) / 32f;
         UpdateFrame();
 
         if (maxDistance <= 0f)
@@ -224,6 +246,14 @@ public class Projectile : MonoBehaviour
             var destructibles = target.GetComponent<DestructibleTilemap>();
             if (destructibles != null)
                 destructibles.TakeDamage(insideHitCell, damage);
+        }
+
+        // Ennemi ou cible (pas un allié) encore en vie : transformé en ballon, sans impact
+        if (lockDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
+        {
+            StatusEffects.Of(health).Lock(lockDuration, lockSprite, lockIcon);
+            Destroy(gameObject);
+            return;
         }
 
         if (impactPrefab != null)

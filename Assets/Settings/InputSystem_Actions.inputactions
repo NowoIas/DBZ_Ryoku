@@ -114,6 +114,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Fusion",
+                    "type": "Button",
+                    "id": "41634d00-2a0d-4360-b0da-f6f9023b553b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Interact",
                     "type": "Button",
                     "id": "852140f2-7766-474d-8707-702459ba45f3",
@@ -297,6 +306,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Transform",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4a71894d-3817-4a27-8c9f-a165384fa9bc",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Fusion",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

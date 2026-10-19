@@ -170,14 +170,23 @@ public class PlayerController : MonoBehaviour
     private bool spinOnE;
     // Trunks : coup d'épée sur la touche E, tir (Burning Blast) sur la touche R (null = technique chargée ou rayon)
     private bool swordOnE;
+    private bool stunPunchOnR;
     private Projectile specialProjectilePrefab;
+    // Gogeta : poing du dragon sur la touche R (null sinon), et celui en cours (supprimé si le joueur meurt)
+    private DragonFist dragonFistPrefab;
+    private DragonFist activeDragonFist;
+    // Gotenks : tir Volleyball sur la touche E (null sinon), fantôme sur la touche R (null sinon)
+    private Projectile projectileOnE;
+    private AnimatorOverrideController ghostController;
+    // Fantôme : se déplace comme en vol (isFlying vrai aussi), sans attaquer ; Espace = retour
+    private bool isGhost;
     public bool PaysWithHealth => paysWithHealth;
     private Vector2 facing = Vector2.down;
     // Directions actuellement tenues, dans l'ordre d'appui : la dernière de la liste est prioritaire
     private readonly List<Vector2> heldDirections = new List<Vector2>();
 
     // Dernier appui mémorisé (direction et action à part), avec son heure
-    private enum BufferedAction { None, Attack, KiBlast, Kamehameha, Transform, Detransform, Fly }
+    private enum BufferedAction { None, Attack, KiBlast, Kamehameha, Transform, Detransform, Fly, Fusion }
     private Vector2 bufferedDirection;
     private float bufferedDirectionTime;
     private BufferedAction bufferedAction;
@@ -192,6 +201,7 @@ public class PlayerController : MonoBehaviour
     private static readonly int SpinState = Animator.StringToHash("Spin");
     private static readonly int SwordState = Animator.StringToHash("Sword");
     private static readonly int SpecialShotState = Animator.StringToHash("SpecialShot");
+    private static readonly int FusionState = Animator.StringToHash("Fusion");
     private static readonly int TransformSpeed = Animator.StringToHash("transformSpeed");
     private static readonly int DetransformSpeed = Animator.StringToHash("detransformSpeed");
     private static readonly int SpinSpeed = Animator.StringToHash("spinSpeed");
@@ -245,8 +255,13 @@ public class PlayerController : MonoBehaviour
         if (SceneTransition.TryTakeArrival(out var arrival))
         {
             PlaceAtArrival(arrival);
-            if (PlayerState.TryRestore(health, ki, out int formLevel) && formLevel > 0 && formLevel <= transformedControllers.Length)
-                SwitchController(transformedControllers[formLevel - 1]);
+            if (PlayerState.TryRestore(health, ki, out int formLevel, out bool wasGhost))
+            {
+                if (formLevel > 0 && formLevel <= transformedControllers.Length)
+                    SwitchController(transformedControllers[formLevel - 1]);
+                if (wasGhost && ghostController != null)
+                    EnterGhost();
+            }
         }
 
         // Niveau de départ : celui de la case de départ si elle est peinte, sinon le sol
@@ -358,6 +373,7 @@ public class PlayerController : MonoBehaviour
         BufferPress(actions.Transform, BufferedAction.Transform);
         BufferPress(actions.Detransform, BufferedAction.Detransform);
         BufferPress(actions.Fly, BufferedAction.Fly);
+        BufferPress(actions.Fusion, BufferedAction.Fusion);
         // Touche de test, hors des contrôles du jeu (pas de remappage) : à retirer avec un vrai choix du personnage
         if (Keyboard.current != null && Keyboard.current.f2Key.wasPressedThisFrame)
             characterSwitchRequested = true;
@@ -380,14 +396,19 @@ public class PlayerController : MonoBehaviour
             // Personnage sans technique E (Trunks enfant) : la touche ne fait rien
             bool kamehamehaHeld = (actions.Kamehameha.IsPressed() || buffered == BufferedAction.Kamehameha)
                 && (character == null || !character.noTechniqueOnE)
-                && (spinOnE ? CanAffordSpin() : swordOnE || CanAffordBeam());
+                && (spinOnE ? CanAffordSpin()
+                    : swordOnE || (projectileOnE != null ? ki.CanSpend(character.projectileOnEKiCost) : CanAffordBeam()));
             // Pas de mémoire d'appui : la touche doit être tenue (un appui déjà relâché annulerait la charge et perdrait le Ki)
             bool genkidamaHeld = actions.Genkidama.IsPressed()
-                && (specialProjectilePrefab != null ? ki.CanSpend(character.specialKiCost)
+                && (stunPunchOnR ? ki.CanSpend(character.stunPunchKiCost)
+                    : ghostController != null ? ki.CanSpend(character.ghostKiCost)
+                    : dragonFistPrefab != null ? ki.CanSpend(dragonFistPrefab.KiCost)
+                    : specialProjectilePrefab != null ? ki.CanSpend(character.specialKiCost)
                     : chargedBeamPrefab != null ? CanAffordBeam() : ki.CanFireGenkidama);
             bool transformPressed = buffered == BufferedAction.Transform;
             bool detransformPressed = buffered == BufferedAction.Detransform;
             bool flyPressed = buffered == BufferedAction.Fly;
+            bool fusionPressed = buffered == BufferedAction.Fusion;
 
             // Une direction tapotée puis relâchée (pendant le déplacement ou l'attaque) passe avant celle tenue, pour un pas
             Vector2 direction = heldDirections.Count > 0 ? heldDirections[heldDirections.Count - 1] : Vector2.zero;
@@ -418,9 +439,13 @@ public class PlayerController : MonoBehaviour
             // En vol : seulement se déplacer ou atterrir (pas d'attaque, de technique ni de transformation)
             if (isFlying)
             {
-                if (flyPressed)
+                // Fantôme : Espace le fait redevenir Gotenks (la touche de vol ne fait rien)
+                if (isGhost ? detransformPressed : flyPressed)
                 {
-                    TryLand();
+                    if (isGhost)
+                        TryEndGhost();
+                    else
+                        TryLand();
                 }
                 else if (direction != Vector2.zero)
                 {
@@ -432,6 +457,13 @@ public class PlayerController : MonoBehaviour
                         Advance(carriedDistance);
                     }
                 }
+            }
+            // Fin de la fusion : chrono écoulé (quelle que soit la forme), ou Espace en forme normale (en SSJ, Espace fait d'abord
+            // revenir en forme normale, ci-dessous)
+            else if (IsFused && (Time.time >= PlayerState.FusionEndTime
+                                 || (detransformPressed && ki.CurrentForm == PlayerKi.Form.Normal)))
+            {
+                EndFusion();
             }
             // Retour à la forme normale : volontaire, ou forcé quand le Ki est épuisé (après l'atterrissage si Goku vole)
             else if (ki.CurrentForm == PlayerKi.Form.Transformed && (detransformPressed || ki.IsDepleted))
@@ -445,7 +477,8 @@ public class PlayerController : MonoBehaviour
                     Face(direction);
                 // Pendant la pause de la technique, il attend sur place (comme pour les coups)
                 if (!beamOnCooldown)
-                    StartCoroutine(spinOnE ? Spin() : swordOnE ? Sword() : Kamehameha(CurrentBeamPrefab(), controls.Player.Kamehameha, true));
+                    StartCoroutine(spinOnE ? Spin() : swordOnE ? Sword() : projectileOnE != null ? ProjectileOnE()
+                        : Kamehameha(CurrentBeamPrefab(), controls.Player.Kamehameha, true));
             }
             else if (genkidamaHeld)
             {
@@ -453,7 +486,10 @@ public class PlayerController : MonoBehaviour
                 if (direction != Vector2.zero)
                     Face(direction);
                 if (!chargedOnCooldown)
-                    StartCoroutine(specialProjectilePrefab != null ? SpecialShot()
+                    StartCoroutine(stunPunchOnR ? StunPunch()
+                        : ghostController != null ? GhostTransformation()
+                        : dragonFistPrefab != null ? DragonFistAttack()
+                        : specialProjectilePrefab != null ? SpecialShot()
                         : chargedBeamPrefab != null ? Kamehameha(chargedBeamPrefab, controls.Player.Genkidama, false) : Genkidama());
             }
             else if (attackHeld || rangedAttackHeld)
@@ -479,6 +515,12 @@ public class PlayerController : MonoBehaviour
                      && (!paysWithHealth || health.CanSpend(character.transformHealthCost)))
             {
                 StartCoroutine(Transformation());
+            }
+            // Fusion (Goten → Gotenks) : depuis la forme normale seulement, au sol
+            else if (fusionPressed && character != null && character.fusionCharacter != null
+                     && ki.CurrentForm == PlayerKi.Form.Normal && ki.CanSpend(character.fusionKiCost))
+            {
+                StartCoroutine(Fusion());
             }
             else if (flyPressed && PlayerCombat.SecondsSinceFight >= flyCombatLockout)
             {
@@ -562,9 +604,13 @@ public class PlayerController : MonoBehaviour
         isMoving = false;
         carriedDistance = distance - remaining;
 
-        // En vol : ni changement de niveau, ni porte (Goku passe au-dessus)
+        // En vol : ni changement de niveau, ni porte (Goku passe au-dessus) ; le fantôme prend les portes (sans ramasser les zénis)
         if (isFlying)
+        {
+            if (isGhost)
+                TakeDoorHere();
             return;
+        }
 
         // Changement de niveau à l'arrivée sur la case (le pas lui-même a été vérifié au niveau de départ)
         int newLevel = LevelMap.LevelAfterEntering(moveTarget, level);
@@ -579,8 +625,12 @@ public class PlayerController : MonoBehaviour
     {
         // Zénis posés sur cette case, à ce niveau : ramassés en arrivant (pas en vol : Goku passe au-dessus)
         ZeniCoin.CollectAt(new Vector3Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y), level));
+        TakeDoorHere();
+    }
 
-        // Arrivée sur une porte : on garde l'état du joueur pour la scène suivante, puis on y va
+    // Arrivée sur une porte : on garde l'état du joueur pour la scène suivante, puis on y va
+    private void TakeDoorHere()
+    {
         var door = Door.FindAt(transform.position);
         if (door != null)
         {
@@ -592,7 +642,7 @@ public class PlayerController : MonoBehaviour
                 Direction = facing,
             };
             if (!SceneTransition.IsSameScene(door.TargetScene))
-                PlayerState.Save(health, ki);
+                PlayerState.Save(health, ki, isGhost);
             if (SceneTransition.Go(door.TargetScene, arrival, doorFadeDuration, doorFadeDuration))
                 carriedDistance = 0f;
         }
@@ -872,6 +922,21 @@ public class PlayerController : MonoBehaviour
         nextBeamTime = Time.time + character.swordCooldown;
     }
 
+    // Coup de poing de Goten (touche R) : comme un coup normal sur la case devant (critique possible), état SpecialShot (planche s3) ;
+    // la cible touchée est étourdie (StatusEffects, figée sur son image)
+    IEnumerator StunPunch()
+    {
+        if (!ki.TryStartKiBlast(character.stunPunchKiCost))
+            yield break;
+
+        bool isCritical = Random.value < criticalChance;
+        float damage = isCritical ? character.stunPunchDamage * criticalMultiplier : character.stunPunchDamage;
+        yield return PlayAttackState(SpecialShotState, character.stunPunchHitTime,
+            () => MeleeHit(damage, isCritical, character.stunDuration, character.stunIcon));
+        nextChargedTime = Time.time + character.stunPunchCooldown;
+        ki.EndKiBlast();
+    }
+
     // Burning Blast de Trunks (touche R) : comme un Ki Blast, avec son propre prefab, coût et pause, état SpecialShot (planche s3)
     IEnumerator SpecialShot()
     {
@@ -882,6 +947,115 @@ public class PlayerController : MonoBehaviour
         yield return PlayAttackState(SpecialShotState, 0.5f, () => SpawnProjectile(specialProjectilePrefab));
         nextChargedTime = Time.time + character.specialCooldown;
         ki.EndKiBlast();
+    }
+
+    // Poing du dragon de Gogeta (touche R, un appui suffit) : état SpecialShot (planche s3, reste figé sur la dernière image),
+    // le poing part à LaunchAnimationTime de l'animation ; Gogeta reste bloqué jusqu'à son retour
+    IEnumerator DragonFistAttack()
+    {
+        if (!ki.TryStartKiBlast(dragonFistPrefab.KiCost))
+            yield break;
+
+        isAttacking = true;
+        animator.Play(SpecialShotState, 0, 0f);
+        float timeout = 0.5f;
+        while (!IsInAttackState() && timeout > 0f)
+        {
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+        while (IsInAttackState() && animator.GetCurrentAnimatorStateInfo(0).normalizedTime < dragonFistPrefab.LaunchAnimationTime)
+            yield return null;
+
+        var fist = Instantiate(dragonFistPrefab, transform.position, Quaternion.identity);
+        fist.Launch(facing, level);
+        activeDragonFist = fist;
+        // Détruit à son retour
+        while (fist != null && !fist.IsFinished)
+            yield return null;
+
+        activeDragonFist = null;
+        nextChargedTime = Time.time + dragonFistPrefab.Cooldown;
+        ki.EndKiBlast();
+        animator.Play(IdleState, 0, 0f);
+        isAttacking = false;
+    }
+
+    // Volleyball de Gotenks (touche E, un appui) : tir comme un Ki Blast, état SpecialShot (planche s2), pause comptée sur E
+    IEnumerator ProjectileOnE()
+    {
+        if (!ki.TryStartKiBlast(character.projectileOnEKiCost))
+            yield break;
+
+        // Le projectile part à la 2e image (bras tendu)
+        yield return PlayAttackState(SpecialShotState, 0.5f, () => SpawnProjectile(projectileOnE));
+        nextBeamTime = Time.time + character.projectileOnECooldown;
+        ki.EndKiBlast();
+    }
+
+    // Gotenks (touche R) : paie le Ki, joue s3 (état Genkidama, inutilisé par Gotenks : l'état transform sert au SSJ), puis devient le fantôme
+    IEnumerator GhostTransformation()
+    {
+        if (!ki.TryStartKiBlast(character.ghostKiCost))
+            yield break;
+        ki.EndKiBlast();
+
+        Face(Vector2.down);
+        yield return PlayAttackState(GenkidamaState, 1f, null);
+        EnterGhost();
+        Face(Vector2.down);
+    }
+
+    // Fantôme de la forme actuelle (SSJ, SSJ3...), sinon celui de la forme normale
+    private AnimatorOverrideController CurrentGhostController()
+    {
+        int index = ki.Level - 1;
+        if (character != null && index >= 0 && index < character.transformedGhostControllers.Length
+            && character.transformedGhostControllers[index] != null)
+            return character.transformedGhostControllers[index];
+        return ghostController;
+    }
+
+    // Animations de la forme actuelle de Gotenks (normale ou palier atteint)
+    private RuntimeAnimatorController CurrentFormController()
+    {
+        int index = ki.Level - 1;
+        if (index >= 0 && index < transformedControllers.Length && transformedControllers[index] != null)
+            return transformedControllers[index];
+        return baseController;
+    }
+
+    // Fantôme : animations du fantôme, au-dessus de tout comme en vol (niveau Air : ni touché, ni repéré par les ennemis)
+    private void EnterGhost()
+    {
+        isGhost = true;
+        isFlying = true;
+        if (heightLevel != null)
+            heightLevel.Level = HeightLevel.Air;
+        spriteRenderer.sortingLayerName = flyingSortingLayer;
+        spriteRenderer.sortingOrder = flyingSortingOrder;
+        SwitchController(CurrentGhostController());
+        Face(facing);
+    }
+
+    // Espace : retour en Gotenks sur la case actuelle, si on peut s'y poser (mêmes règles qu'un atterrissage)
+    private void TryEndGhost()
+    {
+        if (TryGetLandingLevel(out int landingLevel))
+            StartCoroutine(GhostReturn(landingLevel));
+    }
+
+    // Clip detransform du fantôme (s3 à l'envers), au rythme des retours, puis Gotenks se pose dans sa forme d'avant
+    // (SSJ : sa jauge a continué de baisser ; vide, le retour en forme normale suit l'atterrissage, comme après un vol)
+    IEnumerator GhostReturn(int landingLevel)
+    {
+        Face(Vector2.down);
+        animator.SetFloat(DetransformSpeed, detransformSpeed);
+        yield return Attack("detransform");
+        isGhost = false;
+        SwitchController(CurrentFormController());
+        Land(landingLevel);
+        Face(Vector2.down);
     }
 
     // Joue un état taggé "Attack" lancé directement (sans trigger ni transition) et appelle action à actionTime de l'animation ;
@@ -1024,7 +1198,11 @@ public class PlayerController : MonoBehaviour
             paysWithHealth = false;
             spinOnE = false;
             swordOnE = false;
+            stunPunchOnR = false;
             specialProjectilePrefab = null;
+            dragonFistPrefab = null;
+            projectileOnE = null;
+            ghostController = null;
             ki.UsesKi = true;
             return;
         }
@@ -1039,7 +1217,11 @@ public class PlayerController : MonoBehaviour
         ki.UsesKi = !paysWithHealth;
         spinOnE = character.spinOnE;
         swordOnE = character.swordOnE;
+        stunPunchOnR = character.stunPunchOnR;
         specialProjectilePrefab = character.specialProjectilePrefab;
+        dragonFistPrefab = character.dragonFistPrefab;
+        projectileOnE = character.projectileOnE;
+        ghostController = character.ghostController;
         animator.runtimeAnimatorController = baseController;
         if (character.startSprite != null)
             spriteRenderer.sprite = character.startSprite;
@@ -1055,20 +1237,60 @@ public class PlayerController : MonoBehaviour
         return beamPrefab;
     }
 
-    // Touche de test F2 : personnage suivant de testCharacters, gardé pour les prochaines scènes
+    // Touche de test F2 : personnage suivant de testCharacters, gardé pour les prochaines scènes (met fin à une fusion)
     private void SwitchCharacter()
     {
         if (testCharacters == null || testCharacters.Length == 0)
             return;
 
+        PlayerState.FusionOrigin = null;
         int index = System.Array.IndexOf(testCharacters, character);
-        character = testCharacters[(index + 1) % testCharacters.Length];
+        SetCharacter(testCharacters[(index + 1) % testCharacters.Length]);
+        Debug.Log($"Personnage de test : {character.displayName}");
+    }
+
+    // Change de personnage sur place, en forme normale ; PV et Ki gardés
+    private void SetCharacter(CharacterData newCharacter)
+    {
+        character = newCharacter;
         PlayerState.Character = character;
         ApplyCharacter();
         SwitchController(baseController);
         // Le nouvel Animator repart de zéro : on lui redonne la direction actuelle
         Face(facing);
-        Debug.Log($"Personnage de test : {character.displayName}");
+    }
+
+    // Fusion en cours : temps restant au chrono (secondes), -1 sans fusion (lu par le HUD)
+    public bool IsFused => PlayerState.FusionOrigin != null;
+    public float FusionTimeLeft => IsFused ? Mathf.Max(0f, PlayerState.FusionEndTime - Time.time) : -1f;
+
+    // Goten (touche é) : paie le Ki, joue la fusion (état Fusion, planche tr2, au rythme des transformations), puis devient Gotenks
+    // en forme normale ; le personnage d'origine est gardé pour la séparation
+    IEnumerator Fusion()
+    {
+        if (!ki.TryStartKiBlast(character.fusionKiCost))
+            yield break;
+        ki.EndKiBlast();
+
+        Face(Vector2.down);
+        animator.SetFloat(TransformSpeed, transformFramesPerSecond / TransformClipFramesPerSecond);
+        yield return PlayAttackState(FusionState, 1f, null);
+
+        PlayerState.FusionOrigin = character;
+        PlayerState.FusionEndTime = Time.time + character.fusionDuration;
+        SetCharacter(character.fusionCharacter);
+        Face(Vector2.down);
+    }
+
+    // Séparation, sans animation pour l'instant : retour au personnage d'origine en forme normale (depuis un palier si le chrono s'écoule)
+    private void EndFusion()
+    {
+        if (ki.CurrentForm != PlayerKi.Form.Normal)
+            ki.CompleteDetransformation();
+        var origin = PlayerState.FusionOrigin;
+        PlayerState.FusionOrigin = null;
+        SetCharacter(origin);
+        Face(Vector2.down);
     }
 
     // Entre deux controllers qui partagent la même base (Player.controller et ses Override Controllers),
@@ -1107,20 +1329,24 @@ public class PlayerController : MonoBehaviour
     // retrouvait « en haut » sur le sol (collisions du sol et coups sans effet). Sinon il reste en vol (arbre, mur...)
     private void TryLand()
     {
+        if (TryGetLandingLevel(out int landingLevel))
+            Land(landingLevel);
+    }
+
+    // Niveau où l'on peut se poser sur la case actuelle (faux : impossible, on reste en l'air)
+    private bool TryGetLandingLevel(out int landingLevel)
+    {
         // -1 renvoyé = case sans tuile Niveaux (une tuile Niveaux passe avant le pont)
-        int tileLevel = LevelMap.LevelAfterEntering(transform.position, -1);
-        if (tileLevel >= 0)
-        {
-            if (CanLandOnLevel(tileLevel))
-                Land(tileLevel);
-            return;
-        }
+        landingLevel = LevelMap.LevelAfterEntering(transform.position, -1);
+        if (landingLevel >= 0)
+            return CanLandOnLevel(landingLevel);
 
         bool overBridge = bridgeTilemap != null && bridgeTilemap.HasTile(bridgeTilemap.WorldToCell(transform.position));
+        landingLevel = bridgeLevel;
         if (overBridge && CanLandOnLevel(bridgeLevel))
-            Land(bridgeLevel);
-        else if (CanLandOnLevel(0))
-            Land(0);
+            return true;
+        landingLevel = 0;
+        return CanLandOnLevel(0);
     }
 
     private bool CanLandOnLevel(int landingLevel)
@@ -1150,6 +1376,12 @@ public class PlayerController : MonoBehaviour
         StopAllCoroutines();
         HideSpinBlade();
         isSwordInFront = false;
+        // La mort sépare la fusion : on revient avec le personnage d'origine (Goten), dans la scène de réapparition
+        if (PlayerState.FusionOrigin != null)
+        {
+            PlayerState.Character = PlayerState.FusionOrigin;
+            PlayerState.FusionOrigin = null;
+        }
         StartCoroutine(Death());
     }
 
@@ -1168,6 +1400,12 @@ public class PlayerController : MonoBehaviour
         {
             activeGenkidama.Cancel();
             activeGenkidama = null;
+        }
+        // Poing du dragon en cours : il disparaît
+        if (activeDragonFist != null)
+        {
+            activeDragonFist.Cancel();
+            activeDragonFist = null;
         }
         isMoving = false;
         isAttacking = true;
@@ -1190,8 +1428,9 @@ public class PlayerController : MonoBehaviour
         SceneTransition.Go(respawnScene, arrival, deathFadeDuration, doorFadeDuration, reload: true);
     }
 
-    // Frappe la case devant le joueur (seulement ce qui est à son niveau de hauteur)
-    private void MeleeHit(float damage, bool isCritical)
+    // Frappe la case devant le joueur (seulement ce qui est à son niveau de hauteur) ;
+    // stunDuration > 0 : la cible (ni alliée, ni K.O.) est aussi étourdie (poing de Goten)
+    private void MeleeHit(float damage, bool isCritical, float stunDuration = 0f, Sprite stunIcon = null)
     {
         Vector2 target = (Vector2)transform.position + facing;
         var hitTargets = new HashSet<Health>();
@@ -1200,7 +1439,11 @@ public class PlayerController : MonoBehaviour
             var targetHealth = hit.GetComponentInParent<Health>();
             // Une même cible peut avoir plusieurs colliders : on ne la frappe qu'une fois
             if (targetHealth != null && HeightLevel.IsOnLevel(hit, level) && hitTargets.Add(targetHealth))
+            {
                 PlayerCombat.Hit(targetHealth, damage, isCritical);
+                if (stunDuration > 0f && !targetHealth.IsAlly && !targetHealth.IsDead)
+                    StatusEffects.Of(targetHealth).Lock(stunDuration, null, stunIcon);
+            }
         }
     }
 

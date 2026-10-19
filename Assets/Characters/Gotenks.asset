@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: Gotenks
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Gotenks
+  animatorController: {fileID: 22100000, guid: a9b0fc9e1a72ede4c81583287ac78a15, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: b6ef2457f09bebf419b2eda391d2cbe9, type: 2}
+  - {fileID: 22100000, guid: 4a8a2cd03e20f0a4fa1e0e0c20a8e840, type: 2}
+  transformAtDetransformSpeed: 0
+  transformAtDetransformSpeedPerStage: 
+  startSprite: {fileID: 1426062894, guid: 18b415f66c97347428bfec703a2dbd75, type: 3}
+  beamPrefab: {fileID: 0}
+  transformedBeamPrefabs: []
+  chargedTechniquePrefab: {fileID: 0}
+  chargedBeamPrefab: {fileID: 0}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 0
+  spinHitsDiagonals: 0
+  spinHealthCost: 5
+  spinKiCost: 5
+  spinHealRatio: 0.5
+  spinCooldown: 0
+  spinSpeed: 1.25
+  spinBladeStraight: {fileID: 0}
+  spinBladeDiagonal: {fileID: 0}
+  spinBladeStepDegrees: 45
+  spinBladeBehindDirections: 14
+  spinBladeRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpOffsetPixels: {x: 0, y: 0}
+  spinBladeUpLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownOffsetPixels: {x: 0, y: 0}
+  spinBladeDownRightOffsetPixels: {x: 0, y: 0}
+  swordOnE: 0
+  swordDamage: 20
+  swordCooldown: 0
+  swordInFrontDirections: 13
+  noTechniqueOnE: 0
+  specialProjectilePrefab: {fileID: 0}
+  specialKiCost: 15
+  specialCooldown: 0.5
+  dragonFistPrefab: {fileID: 0}
+  projectileOnE: {fileID: 8846146653489414916, guid: c4b348d99794f5645bce30241004ff39, type: 3}
+  projectileOnEKiCost: 15
+  projectileOnECooldown: 1
+  ghostController: {fileID: 22100000, guid: e34e5443502f74945a66adf0cee7787e, type: 2}
+  transformedGhostControllers:
+  - {fileID: 22100000, guid: c5a6731d0a20eff49a9162e4107f4365, type: 2}
+  - {fileID: 22100000, guid: de8a69892f298454aa7d51491c699a30, type: 2}
+  ghostKiCost: 20

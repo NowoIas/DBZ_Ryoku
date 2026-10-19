@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5170c2768c924540a55719dc066a379, type: 3}
+  m_Name: Goten
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.CharacterData
+  displayName: Goten
+  animatorController: {fileID: 22100000, guid: 94433ca511cbc84479e83bbb2e2aafb4, type: 2}
+  transformedControllers:
+  - {fileID: 22100000, guid: 8833abe878f04a0409aac4496e95850e, type: 2}
+  transformAtDetransformSpeed: 0
+  transformAtDetransformSpeedPerStage: 
+  startSprite: {fileID: -194938659, guid: 7a8b0c5b3d0fcf84797b0af01d667be9, type: 3}
+  beamPrefab: {fileID: 2334404194698315446, guid: 53f89185a0b7e2f4b993ab7f11127657, type: 3}
+  transformedBeamPrefabs: []
+  chargedTechniquePrefab: {fileID: 0}
+  chargedBeamPrefab: {fileID: 0}
+  paysWithHealth: 0
+  kiBlastHealthCost: 2
+  beamHealthCost: 10
+  beamHealthPerSecond: 5
+  transformHealthCost: 10
+  spinOnE: 0
+  spinHitsDiagonals: 0
+  spinHealthCost: 5
+  spinKiCost: 5
+  spinHealRatio: 0.5
+  spinCooldown: 0
+  spinSpeed: 1.25
+  spinBladeStraight: {fileID: 0}
+  spinBladeDiagonal: {fileID: 0}
+  spinBladeStepDegrees: 45
+  spinBladeBehindDirections: 14
+  spinBladeRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpRightOffsetPixels: {x: 0, y: 0}
+  spinBladeUpOffsetPixels: {x: 0, y: 0}
+  spinBladeUpLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownLeftOffsetPixels: {x: 0, y: 0}
+  spinBladeDownOffsetPixels: {x: 0, y: 0}
+  spinBladeDownRightOffsetPixels: {x: 0, y: 0}
+  swordOnE: 0
+  swordDamage: 20
+  swordCooldown: 0
+  swordInFrontDirections: 13
+  noTechniqueOnE: 0
+  specialProjectilePrefab: {fileID: 0}
+  specialKiCost: 15
+  specialCooldown: 0.5
+  dragonFistPrefab: {fileID: 0}
+  fusionCharacter: {fileID: 11400000, guid: b62191a1d07e2d14fa4d408852392a7a, type: 2}
+  fusionKiCost: 50
+  fusionDuration: 180
+  stunPunchOnR: 1
+  stunPunchDamage: 15
+  stunDuration: 2
+  stunIcon: {fileID: 21300000, guid: 330fc3431235b9245966244f0a99d1c5, type: 3}
+  stunPunchKiCost: 10
+  stunPunchCooldown: 1
+  stunPunchHitTime: 0.25
+  projectileOnE: {fileID: 0}
+  projectileOnEKiCost: 15
+  projectileOnECooldown: 1
+  ghostController: {fileID: 0}
+  transformedGhostControllers: []
+  ghostKiCost: 20
