@@ -13,7 +13,8 @@ namespace DBZ.Player
         [Tooltip("Animations de la forme normale : Player.controller (Goku) ou un Override Controller de Player.controller")]
         public RuntimeAnimatorController animatorController;
 
-        [Tooltip("Un Override Controller par palier de transformation, dans l'ordre (SSJ, SSJ3...). Vide = pas de transformation")]
+        [Tooltip("Un Override Controller par palier de transformation, dans l'ordre (SSJ, SSJ3...). Liste vide = pas de transformation ; "
+            + "case vide = palier sauté (Gogeta : SSJ, vide, SSJ4, Blue)")]
         public AnimatorOverrideController[] transformedControllers = new AnimatorOverrideController[0];
 
         [Tooltip("Transformation jouée au rythme du retour (Detransform Speed du PlayerController) au lieu de Transform Frames Per Second "

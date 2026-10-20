@@ -515,7 +515,7 @@ public class PlayerController : MonoBehaviour
                     StartCoroutine(KiBlast());
                 }
             }
-            else if (transformPressed && ki.CanTransform && ki.Level < transformedControllers.Length
+            else if (transformPressed && NextTransformationStage() > 0 && ki.CanTransformTo(NextTransformationStage())
                      && (!paysWithHealth || health.CanSpend(character.transformHealthCost)))
             {
                 StartCoroutine(Transformation());
@@ -1138,19 +1138,32 @@ public class PlayerController : MonoBehaviour
             ki.EndKiBlast();
     }
 
+    // Prochain palier (1 = premier) ayant un Override dans la fiche ; les cases vides sont des paliers sautés
+    // (Gogeta : SSJ → SSJ4, sans palier 2). -1 s'il n'y en a plus
+    int NextTransformationStage()
+    {
+        for (int index = ki.Level; index < transformedControllers.Length; index++)
+        {
+            if (transformedControllers[index] != null)
+                return index + 1;
+        }
+        return -1;
+    }
+
     IEnumerator Transformation()
     {
-        AnimatorOverrideController nextController = transformedControllers[ki.Level];
-        if (nextController == null)
+        int nextStage = NextTransformationStage();
+        if (nextStage < 0)
         {
-            Debug.LogWarning($"Aucun Transformed Controller assigné pour le palier {ki.Level + 1} sur le PlayerController.");
+            Debug.LogWarning($"Aucun Transformed Controller assigné au-dessus du palier {ki.Level} sur le PlayerController.");
             yield break;
         }
+        AnimatorOverrideController nextController = transformedControllers[nextStage - 1];
 
-        // Paie le coût (en Ki, ou en PV pour Piccolo) et passe au palier suivant ; la jauge du palier commence à se remplir
+        // Paie le coût (en Ki, ou en PV pour Piccolo) et passe au palier visé ; la jauge du palier commence à se remplir
         if (paysWithHealth && !health.CanSpend(character.transformHealthCost))
             yield break;
-        if (!ki.TryStartTransformation())
+        if (!ki.TryStartTransformation(nextStage))
             yield break;
         if (paysWithHealth)
             health.TrySpend(character.transformHealthCost);

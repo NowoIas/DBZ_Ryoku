@@ -5,7 +5,7 @@ namespace DBZ.Player
 {
     // Jauges de Ki du joueur : recharge, coût des techniques et consommation pendant la transformation.
     // Une jauge par forme (normale, SSJ, SSJ3...) : en se transformant, la jauge de la forme de départ
-    // paie le coût puis reste figée ; la nouvelle jauge part de cette valeur et baisse seule.
+    // paie le coût puis reste figée ; la nouvelle jauge démarre pleine et baisse seule.
     // Au retour, la jauge normale retrouve la valeur qu'elle avait au départ.
     // Le PlayerController décide des actions ; ce composant ne gère que les valeurs.
     public class PlayerKi : MonoBehaviour
@@ -59,9 +59,16 @@ namespace DBZ.Player
         public bool CanFireGenkidama => Current >= genkidamaCost;
         public bool CanSpend(float cost) => Current >= cost;
         // Depuis la forme normale ou un palier déjà atteint, s'il reste un palier au-dessus
-        public bool CanTransform => (CurrentForm == Form.Normal || CurrentForm == Form.Transformed)
-                                    && Level < transformations.Length
-                                    && (!UsesKi || Current >= transformations[Level].cost);
+        public bool CanTransform => CanTransformTo(Level + 1);
+
+        // Vers un palier précis au-dessus du palier actuel (Gogeta saute le palier 2 : SSJ → SSJ4) ;
+        // le coût est celui du palier visé
+        public bool CanTransformTo(int stage)
+        {
+            return (CurrentForm == Form.Normal || CurrentForm == Form.Transformed)
+                   && stage > Level && stage <= transformations.Length
+                   && (!UsesKi || Current >= transformations[stage - 1].cost);
+        }
         // Faux pour un personnage qui paie en PV (Piccolo) : ses transformations ne coûtent ni ne consomment de Ki,
         // elles durent jusqu'au retour volontaire. Réglé par le PlayerController selon la fiche du personnage
         public bool UsesKi { get; set; } = true;
@@ -194,16 +201,20 @@ namespace DBZ.Player
 
         public bool TryStartTransformation()
         {
-            if (!CanTransform)
+            return TryStartTransformation(Level + 1);
+        }
+
+        public bool TryStartTransformation(int stage)
+        {
+            if (!CanTransformTo(stage))
                 return false;
 
             // La jauge de la forme de départ paie le coût puis reste figée ;
-            // celle du palier atteint part de ce qu'il reste
+            // celle du palier atteint démarre pleine
             if (UsesKi)
-                Current -= transformations[Level].cost;
-            float startKi = Current;
-            Level++;
-            Current = startKi;
+                Current -= transformations[stage - 1].cost;
+            Level = stage;
+            Current = maxKi;
             CurrentForm = Form.Transforming;
             return true;
         }

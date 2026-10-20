@@ -16,6 +16,9 @@ MonoBehaviour:
   animatorController: {fileID: 22100000, guid: 194630aeacc07884da5631685648f9e3, type: 2}
   transformedControllers:
   - {fileID: 22100000, guid: fe6df5513e0c4c54591b3b1a8f6dbd2f, type: 2}
+  - {fileID: 0}
+  - {fileID: 22100000, guid: ee523b254b3af5f4dac40b201ff922b1, type: 2}
+  - {fileID: 22100000, guid: 89d603b18e578004483c1381b0f64f16, type: 2}
   transformAtDetransformSpeed: 0
   transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: -262166062, guid: ce8eaeb74e901774abdccc7a57960cfa, type: 3}
@@ -59,6 +62,7 @@ MonoBehaviour:
   fusionCharacter: {fileID: 0}
   fusionKiCost: 50
   fusionDuration: 180
+  separationClip: {fileID: 0}
   stunPunchOnR: 0
   stunPunchDamage: 15
   stunDuration: 2

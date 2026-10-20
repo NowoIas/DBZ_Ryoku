@@ -299,6 +299,12 @@ MonoBehaviour:
   - name: SSJ3
     cost: 20
     drainPerSecond: 5
+  - name: SSJ4
+    cost: 30
+    drainPerSecond: 6.67
+  - name: Blue
+    cost: 40
+    drainPerSecond: 10
 --- !u!114 &8022696846420452834
 MonoBehaviour:
   m_ObjectHideFlags: 0
