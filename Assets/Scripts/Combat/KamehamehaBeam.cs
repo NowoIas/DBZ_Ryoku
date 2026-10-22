@@ -133,6 +133,10 @@ namespace DBZ.Combat
             new System.Collections.Generic.Dictionary<(Sprite, int), Sprite>();
         // Position locale de chaque morceau sans avancée du bout
         private Vector3[] segmentPositions;
+        // Recul du départ vers les mains dans le sens du tir (négatif = vers le tireur), en cases
+        private float startAlong;
+        // Collé à une case pleine : impact recalé contre le départ (UpdateImpactAgainstStart)
+        private bool impactAgainstStart;
         // Niveau de chaque case du rayon : son ordre d'affichage en dépend (sous le pont au sol, dessus en haut)
         private int[] cellLevels;
         // Longueur atteinte, en cases (fractionnaire pendant la pousse)
@@ -164,6 +168,7 @@ namespace DBZ.Combat
             Vector2 localOffset = new Vector2(Mathf.Round(localPixels.x), Mathf.Round(localPixels.y)) / 32f;
             Vector3 across = new Vector3(0f, localOffset.y, 0f);
             float along = localOffset.x;
+            startAlong = along;
 
             // Un morceau = un SpriteRenderer enfant, alignés vers la droite en local (segmentsPerCell par case)
             int segments = maxLength * segmentsPerCell;
@@ -322,6 +327,10 @@ namespace DBZ.Combat
 
             int visible = reach;
             bool isHitting = blockedIndex >= 0;
+            // Collé à un ennemi, une cible ou une case pleine (case pleine, montagne) : l'impact recule contre le départ,
+            // dans la case de l'obstacle, au lieu d'aller jusqu'à son bord du fond
+            impactAgainstStart = blockedIndex == 0
+                && (target != null || CollisionMap.IsTechniqueSolidCell(CellCenter(0), cellLevel));
             if (isHitting)
             {
                 // Le rayon s'arrête sur la case avant la cible ; collé à elle (aucune case libre),
@@ -371,6 +380,7 @@ namespace DBZ.Combat
                 ShooterSortingOffset = 0;
             UpdateSprites(visibleSegments, isHitting, trailIndex, underTarget);
             UpdateTipOverlap(visibleSegments, reachesTarget && !(IsReleased && trailIndex >= visibleSegments - 1));
+            UpdateImpactAgainstStart(visibleSegments);
             // Après l'avancée du bout : la coupure du départ suit la position réelle de l'impact
             UpdateLaunch(visibleSegments, trailIndex, underTarget, isHitting);
         }
@@ -675,6 +685,19 @@ namespace DBZ.Combat
             if (endFiller.enabled)
                 endFiller.transform.localPosition = segmentPositions[last] + new Vector3(overlap - 1f / segmentsPerCell, 0f, 0f);
             UpdateEndFiller(visible);
+        }
+
+        // Collé à un ennemi ou à une case pleine : l'impact (2e morceau) recule d'autant que le départ vers les mains, collé à son bord
+        // avant, à la place du bouchage du départ ; sinon il reprend sa place (s'il n'a pas été replacé par l'avancée du bout)
+        private void UpdateImpactAgainstStart(int visible)
+        {
+            if (segmentsPerCell < 2 || startAlong >= 0f)
+                return;
+            bool against = impactAgainstStart && visible == 2;
+            if (against || targetOverlapPixels <= 0)
+                cells[1].transform.localPosition = segmentPositions[1] + (against ? new Vector3(startAlong, 0f, 0f) : Vector3.zero);
+            if (against && startFiller != null)
+                startFiller.enabled = false;
         }
 
         // Le bouchage du bout prend le corps, l'épaisseur et l'ordre le plus bas des deux morceaux voisins.

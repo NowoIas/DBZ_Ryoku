@@ -17,6 +17,7 @@ MonoBehaviour:
   transformedControllers:
   - {fileID: 22100000, guid: 941527886f79c9a4ea2981552b235704, type: 2}
   - {fileID: 22100000, guid: 715d07f2c970d5b4ca8f00bc42c92959, type: 2}
+  - {fileID: 22100000, guid: 6e7868e1864bbbc48b9ed3148aff2441, type: 2}
   transformAtDetransformSpeed: 0
   transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: 1600497784, guid: 29dc3c1ddff730742a6d6b6beb5464f5, type: 3}

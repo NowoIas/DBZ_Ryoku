@@ -42,6 +42,19 @@ namespace DBZ.World
         // Un pas d'une case (joueur) sur le calque de collision de ce niveau de hauteur
         public static bool CanMoveOnLevel(Vector3 fromWorld, Vector2 direction, int level)
         {
+            // Sol infranchissable à pied (eau, montagnes : BlockingGround) ; au-dessus de l'eau, les techniques passent
+            if (BlockingGround.IsBlocked(fromWorld + (Vector3)direction, level))
+                return false;
+            return CanTechniquePass(fromWorld, direction, level);
+        }
+
+        // Techniques (Ki Blast, Kamehameha) : même règle qu'un pas (case pleine, murs, sens unique dans le sens
+        // qu'il bloque), sur le calque de collision du niveau de hauteur de la technique ; arrêtées aussi par
+        // les montagnes du sol (BlockingGround), comme par un mur
+        public static bool CanTechniquePass(Vector3 fromWorld, Vector2 direction, int level)
+        {
+            if (BlockingGround.BlocksTechniques(fromWorld + (Vector3)direction, level))
+                return false;
             foreach (var map in activeMaps)
             {
                 if (map.level == level && !map.CanMove(fromWorld, direction))
@@ -50,11 +63,17 @@ namespace DBZ.World
             return true;
         }
 
-        // Techniques (Ki Blast, Kamehameha) : même règle qu'un pas (case pleine, murs, sens unique dans le sens
-        // qu'il bloque), sur le calque de collision du niveau de hauteur de la technique
-        public static bool CanTechniquePass(Vector3 fromWorld, Vector2 direction, int level)
+        // Case qui arrête les techniques en entier (case pleine, montagne), à la différence d'un mur fin sur un bord :
+        // un rayon peut y dessiner son impact
+        public static bool IsTechniqueSolidCell(Vector3 world, int level)
         {
-            return CanMoveOnLevel(fromWorld, direction, level);
+            return IsSolidCell(world, level) || BlockingGround.BlocksTechniques(world, level);
+        }
+
+        // Atterrissage refusé : case pleine, ou sol infranchissable à pied (eau, montagnes)
+        public static bool BlocksLanding(Vector3 world, int level)
+        {
+            return IsSolidCell(world, level) || BlockingGround.IsBlocked(world, level);
         }
 
         // Case pleine sur le calque de ce niveau (l'impact d'une technique se joue alors dans la case)

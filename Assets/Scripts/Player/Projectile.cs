@@ -126,9 +126,9 @@ public class Projectile : MonoBehaviour
         // pour ne pas toucher une cible derrière un mur
         if (IsBlockedBefore(LeadingEdge(distance)))
         {
-            // Case pleine : impact dedans, comme sur un obstacle ; mur ou sens unique : avant le côté bloqué
+            // Case pleine (ou montagne) : impact dedans, comme sur un obstacle ; mur ou sens unique : avant le côté bloqué
             Vector2Int next = cell + Vector2Int.RoundToInt(direction);
-            HitWall(CollisionMap.IsSolidCell(CellCenter(next), level) ? next : cell);
+            HitWall(CollisionMap.IsTechniqueSolidCell(CellCenter(next), level) ? next : cell);
             return;
         }
 

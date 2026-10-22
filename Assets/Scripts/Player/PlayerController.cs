@@ -1414,7 +1414,7 @@ public class PlayerController : MonoBehaviour
         var hits = Physics2D.OverlapCircleAll(transform.position, collisionCheckRadius, solidObjectsLayer);
         if (HeightLevel.FirstOnLevel(hits, landingLevel) != null)
             return false;
-        return !CollisionMap.IsSolidCell(transform.position, landingLevel);
+        return !CollisionMap.BlocksLanding(transform.position, landingLevel);
     }
 
     private void Land(int landingLevel)

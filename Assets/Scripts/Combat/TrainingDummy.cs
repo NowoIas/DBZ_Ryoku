@@ -20,6 +20,11 @@ namespace DBZ.Combat
             health = GetComponent<Health>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             baseColor = spriteRenderer.color;
+
+            // Comme le joueur et les ennemis : recentré sur sa case, sinon posé un peu à côté dans l'éditeur,
+            // il déborde sur la case voisine et les impacts (Ki Blast) y tombent
+            Vector3 pos = transform.position;
+            transform.position = new Vector3(Mathf.Floor(pos.x) + 0.5f, Mathf.Floor(pos.y) + 0.5f, pos.z);
         }
 
         private void OnEnable()

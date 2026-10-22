@@ -57,3 +57,8 @@ CLAUDE.md
 *.png.meta
 *.PNG
 *.PNG.meta
+
+# --- Carte du monde : trop lourde pour GitHub (40 Mo+, refus au-delà de 100 Mo), sauvegardée par Plastic ---
+# Avec son .meta : sans la scène, Unity supprimerait le .meta à l'ouverture
+/[Aa]ssets/[Ss]cenes/Overworld.unity
+/[Aa]ssets/[Ss]cenes/Overworld.unity.meta
