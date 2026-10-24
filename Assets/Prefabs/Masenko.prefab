@@ -198,7 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15fedabfcaf44a642aab11c333c6bc7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.GenkidamaBall
-  cooldown: 2
+  cooldown: 1.5
   ballFrames:
   - {fileID: 677475529631580340, guid: 8faa47d1a7dfc9c4a945ddd16ca373a9, type: 3}
   - {fileID: -40940555195135417, guid: 8faa47d1a7dfc9c4a945ddd16ca373a9, type: 3}

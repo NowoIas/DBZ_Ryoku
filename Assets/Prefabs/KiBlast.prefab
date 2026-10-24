@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e2cd4c691c952f46b615d0f4daaaf9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
-  speed: 8
+  speed: 10
   maxDistance: 8
   lifetime: 1
   damage: 10
@@ -136,3 +136,13 @@ MonoBehaviour:
   - {fileID: 1342813933, guid: e70f90c15aa40434495da894048f5128, type: 3}
   - {fileID: -662680828, guid: e70f90c15aa40434495da894048f5128, type: 3}
   cellsPerFrame: 2
+  loopFrameCount: 0
+  loopCellsPerFrame: 1
+  rotateWithDirection: 0
+  upOffsetPixels: {x: 0, y: 0}
+  downOffsetPixels: {x: 0, y: 0}
+  leftOffsetPixels: {x: 0, y: 0}
+  rightOffsetPixels: {x: 0, y: 0}
+  lockDuration: 0
+  lockSprite: {fileID: 0}
+  lockIcon: {fileID: 0}

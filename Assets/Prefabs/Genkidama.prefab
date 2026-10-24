@@ -198,13 +198,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15fedabfcaf44a642aab11c333c6bc7c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.GenkidamaBall
-  cooldown: 2
+  cooldown: 1.5
   ballFrames:
   - {fileID: 832088712107740362, guid: 196a3ab38bcc5ff41b9cb971d31e0d73, type: 3}
   - {fileID: 453592500629036009, guid: 196a3ab38bcc5ff41b9cb971d31e0d73, type: 3}
   - {fileID: 7209232243026838472, guid: 196a3ab38bcc5ff41b9cb971d31e0d73, type: 3}
   - {fileID: -8598226539573983096, guid: 196a3ab38bcc5ff41b9cb971d31e0d73, type: 3}
-  chargeFramesPerSecond: 10
+  chargeFramesPerSecond: 12
   readyFrames:
   - {fileID: -8789851637055561422, guid: 9291a9205c6d1484583302cbf47ed428, type: 3}
   - {fileID: -8951487013200745909, guid: 9291a9205c6d1484583302cbf47ed428, type: 3}
@@ -225,6 +225,10 @@ MonoBehaviour:
     m_Bits: 64
   hitRadius: 0.3
   canDestroyObstacles: 1
+  healAmount: 0
+  healLayers:
+    serializedVersion: 2
+    m_Bits: 0
   impactPrefab: {fileID: 8648092690837655232, guid: 8a7b1c44407a5924abb5989698cf5e7a, type: 3}
   ballSortingLayer: foreground
   ballSortingOrder: 40

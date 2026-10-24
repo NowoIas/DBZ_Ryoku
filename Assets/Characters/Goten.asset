@@ -65,7 +65,7 @@ MonoBehaviour:
   stunDuration: 2
   stunIcon: {fileID: 21300000, guid: 330fc3431235b9245966244f0a99d1c5, type: 3}
   stunPunchKiCost: 10
-  stunPunchCooldown: 1
+  stunPunchCooldown: 1.5
   stunPunchHitTime: 0.25
   projectileOnE: {fileID: 0}
   projectileOnEKiCost: 15

@@ -199,7 +199,7 @@ MonoBehaviour:
   meleeHitRadius: 0.4
   meleeCooldown: 0
   criticalCooldown: 0
-  kiBlastCooldown: 0
+  kiBlastCooldown: 0.5
   projectilePrefab: {fileID: 8846146653489414916, guid: 7734b1b3bd97e6c48b9f4cebb8c36eae, type: 3}
   kamehamehaPrefab: {fileID: 2334404194698315446, guid: 73479cf8e78312a4b916a631f35cd7ae, type: 3}
   chargedTechniquePrefab: {fileID: 239795273294945934, guid: 8586865d0c7b2ec4992bbdd268931ba6, type: 3}

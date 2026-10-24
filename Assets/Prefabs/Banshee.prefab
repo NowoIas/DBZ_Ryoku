@@ -65,6 +65,16 @@ MonoBehaviour:
   downOffsetPixels: {x: 1, y: 10}
   leftOffsetPixels: {x: 6, y: -3}
   rightOffsetPixels: {x: -6, y: 0}
+  launchSpritesUp: []
+  launchSpritesDown: []
+  launchSpritesLeft: []
+  launchSpritesRight: []
+  launchUpOffsetPixels: {x: 0, y: 0}
+  launchDownOffsetPixels: {x: 0, y: 0}
+  launchLeftOffsetPixels: {x: 0, y: 0}
+  launchRightOffsetPixels: {x: 0, y: 0}
+  launchCoveredSegments: 2
+  launchCutMarginPixels: 0
   maxLength: 10
   cellsPerSecond: 30
   segmentsPerCell: 2
@@ -80,7 +90,7 @@ MonoBehaviour:
   targetOverlapPixels: 8
   openDuration: 0
   closeDuration: 0
-  cooldown: 1
+  cooldown: 1.5
   sortingLayerName: player
   sortingOrder: 1
   startBehindPlayerDirections: 13

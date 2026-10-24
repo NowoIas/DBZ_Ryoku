@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b5854347d86ad9449985b7d913e8855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.BigBangBall
-  cooldown: 2
+  cooldown: 1.5
   chargeFrames:
   - {fileID: 7702074878773992412, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
   - {fileID: 6154973809488014366, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}

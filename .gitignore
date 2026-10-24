@@ -62,3 +62,8 @@ CLAUDE.md
 # Avec son .meta : sans la scène, Unity supprimerait le .meta à l'ouverture
 /[Aa]ssets/[Ss]cenes/Overworld.unity
 /[Aa]ssets/[Ss]cenes/Overworld.unity.meta
+
+# --- Tuiles DBZ Online : ~22 000 fichiers, sauvegardées par Plastic ---
+/[Aa]ssets/[Tt]iles/DBZOnline/
+/[Aa]ssets/[Tt]iles/DBZOnline.meta
+/[Aa]ssets/[Tt]ilesets/DBZOnline.meta

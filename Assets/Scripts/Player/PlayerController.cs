@@ -614,6 +614,7 @@ public class PlayerController : MonoBehaviour
         // En vol : ni changement de niveau, ni porte (Goku passe au-dessus) ; le fantôme prend les portes (sans ramasser les zénis)
         if (isFlying)
         {
+            TileSwitch.PlayerArrivedAt(transform.position, false);
             if (isGhost)
                 TakeDoorHere();
             return;
@@ -632,6 +633,7 @@ public class PlayerController : MonoBehaviour
     {
         // Zénis posés sur cette case, à ce niveau : ramassés en arrivant (pas en vol : Goku passe au-dessus)
         ZeniCoin.CollectAt(new Vector3Int(Mathf.FloorToInt(transform.position.x), Mathf.FloorToInt(transform.position.y), level));
+        TileSwitch.PlayerArrivedAt(transform.position, true);
         TakeDoorHere();
     }
 

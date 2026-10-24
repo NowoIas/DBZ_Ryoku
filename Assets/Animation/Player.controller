@@ -625,7 +625,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Kamehameha
-  m_Speed: 1
+  m_Speed: 2
   m_CycleOffset: 0
   m_Transitions:
   - {fileID: -5102566128206702457}
@@ -1262,7 +1262,7 @@ AnimatorStateMachine:
     m_Position: {x: 300, y: 350, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 7043628631158133222}
-    m_Position: {x: 320, y: 410, z: 0}
+    m_Position: {x: 310, y: 440, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3535955536225721205}
     m_Position: {x: 340, y: 470, z: 0}
@@ -1274,7 +1274,7 @@ AnimatorStateMachine:
     m_Position: {x: 560, y: 430, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -1257634883440207359}
-    m_Position: {x: 300, y: 410, z: 0}
+    m_Position: {x: 300, y: 400, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3223266039596282398}
     m_Position: {x: 300, y: 530, z: 0}
@@ -1283,7 +1283,7 @@ AnimatorStateMachine:
     m_Position: {x: 800, y: 300, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 3946339147555401003}
-    m_Position: {x: 800, y: 380, z: 0}
+    m_Position: {x: 800, y: 410, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7702086647269130874}
     m_Position: {x: 800, y: 460, z: 0}
