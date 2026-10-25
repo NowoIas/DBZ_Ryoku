@@ -45,7 +45,16 @@ namespace DBZ.World
             // Sol infranchissable à pied (eau, montagnes : BlockingGround) ; au-dessus de l'eau, les techniques passent
             if (BlockingGround.IsBlocked(fromWorld + (Vector3)direction, level))
                 return false;
-            return CanTechniquePass(fromWorld, direction, level);
+            if (IsWalkBlockingCell(fromWorld + (Vector3)direction, level))
+                return false;
+            if (BlockingGround.BlocksTechniques(fromWorld + (Vector3)direction, level))
+                return false;
+            foreach (var map in activeMaps)
+            {
+                if (map.level == level && !map.CanMove(fromWorld, direction, true))
+                    return false;
+            }
+            return true;
         }
 
         // Techniques (Ki Blast, Kamehameha) : même règle qu'un pas (case pleine, murs, sens unique dans le sens
@@ -70,10 +79,25 @@ namespace DBZ.World
             return IsSolidCell(world, level) || BlockingGround.BlocksTechniques(world, level);
         }
 
-        // Atterrissage refusé : case pleine, ou sol infranchissable à pied (eau, montagnes)
+        // Atterrissage refusé : case pleine, case d'eau peinte, ou sol infranchissable à pied (eau, montagnes)
         public static bool BlocksLanding(Vector3 world, int level)
         {
-            return IsSolidCell(world, level) || BlockingGround.IsBlocked(world, level);
+            return IsSolidCell(world, level) || IsWalkBlockingCell(world, level) || BlockingGround.IsBlocked(world, level);
+        }
+
+        // Case d'eau peinte (blocksWalking) sur le calque de ce niveau : ni marche ni atterrissage ;
+        // CanTechniquePass ne la lit pas, les techniques passent
+        public static bool IsWalkBlockingCell(Vector3 world, int level)
+        {
+            foreach (var map in activeMaps)
+            {
+                if (map.level != level)
+                    continue;
+                var tile = map.tilemap.GetTile<CollisionTile>(map.tilemap.WorldToCell(world));
+                if (tile != null && tile.blocksWalking)
+                    return true;
+            }
+            return false;
         }
 
         // Case pleine sur le calque de ce niveau (l'impact d'une technique se joue alors dans la case)
@@ -91,8 +115,9 @@ namespace DBZ.World
         }
 
         // Un pas d'une case dans une des 4 directions : bloqué par un mur (ou un sens unique) du côté franchi,
-        // dans la case de départ comme dans celle d'arrivée, ou par une case d'arrivée pleine
-        public bool CanMove(Vector3 fromWorld, Vector2 direction)
+        // dans la case de départ comme dans celle d'arrivée, ou par une case d'arrivée pleine.
+        // À pied (walking), les bords d'eau (walkWalls) bloquent aussi ; les techniques les traversent
+        public bool CanMove(Vector3 fromWorld, Vector2 direction, bool walking = false)
         {
             CellSides exitSide = CollisionTile.SideOf(direction);
             CellSides entrySide = CollisionTile.SideOf(-direction);
@@ -101,15 +126,20 @@ namespace DBZ.World
 
             // En sortant : seuls les murs bloquent (un sens unique laisse justement sortir)
             var fromTile = tilemap.GetTile<CollisionTile>(from);
-            if (fromTile != null && (fromTile.walls & exitSide) != 0)
+            if (fromTile != null && (WallsOf(fromTile, walking) & exitSide) != 0)
                 return false;
 
             // En entrant : case pleine, mur, ou sens unique (on ne rentre pas par un rebord)
             var toTile = tilemap.GetTile<CollisionTile>(to);
-            if (toTile != null && (toTile.isSolid || ((toTile.walls | toTile.oneWayExits) & entrySide) != 0))
+            if (toTile != null && (toTile.isSolid || ((WallsOf(toTile, walking) | toTile.oneWayExits) & entrySide) != 0))
                 return false;
 
             return true;
+        }
+
+        private static CellSides WallsOf(CollisionTile tile, bool walking)
+        {
+            return walking ? tile.walls | tile.walkWalls : tile.walls;
         }
     }
 }

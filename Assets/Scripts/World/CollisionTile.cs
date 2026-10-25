@@ -27,6 +27,10 @@ namespace DBZ.World
         [Tooltip("Sens unique : côtés par lesquels on peut sortir de la case mais pas y entrer "
             + "(rebord : on descend, on ne remonte pas)")]
         public CellSides oneWayExits;
+        [Tooltip("Eau : on ne marche pas dessus et on n'y atterrit pas, mais les techniques passent (pas de collider)")]
+        public bool blocksWalking;
+        [Tooltip("Bord d'eau : côtés qu'on ne franchit pas à pied (aucun sens), mais que les techniques traversent")]
+        public CellSides walkWalls;
 
         public override void GetTileData(Vector3Int position, ITilemap tilemap, ref TileData tileData)
         {
