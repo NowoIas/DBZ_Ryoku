@@ -125,6 +125,14 @@ namespace DBZ.Player
         [Tooltip("Directions où le personnage passe devant les ennemis pendant le coup d'épée (l'épée déborde de sa case). "
             + "Ailleurs (bas) : ordre normal, l'ennemi en dessous reste devant")]
         public DBZ.World.CellSides swordInFrontDirections = DBZ.World.CellSides.Up | DBZ.World.CellSides.Left | DBZ.World.CellSides.Right;
+        [Tooltip("Saignement infligé par l'épée (secondes, 0 = aucun ; un nouveau coup la fait repartir de zéro)")]
+        [Min(0f)] public float bleedDuration = 0f;
+        [Tooltip("Dégâts de chaque tic de saignement")]
+        [Min(0f)] public float bleedDamage = 3f;
+        [Tooltip("Temps entre deux tics (secondes)")]
+        [Min(0.05f)] public float bleedInterval = 0.5f;
+        [Tooltip("Icône de l'état, sur la case au-dessus de la cible")]
+        public Sprite bleedIcon;
 
         [Header("Touche E désactivée (Trunks enfant)")]
         [Tooltip("La touche E ne fait rien (personnage sans technique E)")]

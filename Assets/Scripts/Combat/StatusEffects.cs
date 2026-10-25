@@ -8,7 +8,8 @@ namespace DBZ.Combat
     // (prévu pour cumuler plusieurs états).
     // Étourdi (stun) : son Animator est arrêté, il ne bouge plus et n'attaque plus (EnemyController lit IsLocked) ;
     // il reçoit toujours les coups. Ballon (Volleyball de Gotenks) : son image est remplacée par le ballon ;
-    // sans ballon (poing de Goten) : il reste figé sur l'image qu'il avait
+    // sans ballon (poing de Goten) : il reste figé sur l'image qu'il avait.
+    // Saignement (épée de Trunks) / brûlure (Burning Blast) : dégâts répétés, comptés comme des coups du joueur (PlayerCombat.Hit)
     public class StatusEffects : MonoBehaviour
     {
         // Écart entre deux icônes, en pixels
@@ -20,6 +21,10 @@ namespace DBZ.Combat
         {
             public float endTime;
             public SpriteRenderer icon;
+            // Dégâts par tic (0 = aucun) : saignement, brûlure
+            public float damagePerTick;
+            public float tickInterval;
+            public float nextTickTime;
         }
 
         // États en cours, par nom (« stun »...), dans l'ordre d'arrivée (ordre des icônes)
@@ -36,6 +41,8 @@ namespace DBZ.Combat
         private bool isLocked;
 
         public const string Stun = "stun";
+        public const string Bleed = "bleed";
+        public const string Burn = "burn";
 
         // Personnage étourdi (figé ou ballon) : ni déplacement ni attaque
         public bool IsLocked => isLocked;
@@ -88,6 +95,19 @@ namespace DBZ.Combat
             if (ballSprite != null)
                 lockSprite = ballSprite;
             Add(Stun, duration, icon);
+        }
+
+        // Dégâts répétés (saignement, brûlure) : damagePerTick toutes les tickInterval secondes pendant duration ;
+        // relancé : la durée repart de zéro, les dégâts ne s'additionnent pas (le rythme des tics continue)
+        public void AddDamageOverTime(string status, float duration, float damagePerTick, float tickInterval, Sprite icon)
+        {
+            bool isNew = !statuses.ContainsKey(status);
+            Add(status, duration, icon);
+            var entry = statuses[status];
+            entry.damagePerTick = damagePerTick;
+            entry.tickInterval = Mathf.Max(0.05f, tickInterval);
+            if (isNew)
+                entry.nextTickTime = Time.time + entry.tickInterval;
         }
 
         public void Add(string status, float duration, Sprite icon)
@@ -143,6 +163,19 @@ namespace DBZ.Combat
 
         private void Update()
         {
+            // Copie : un tic peut mettre la cible K.O., ce qui vide la liste (ClearAll)
+            foreach (var status in new List<string>(order))
+            {
+                if (!statuses.TryGetValue(status, out var entry) || entry.damagePerTick <= 0f)
+                    continue;
+                // Dernier tic compris s'il tombe pile à la fin
+                while (Time.time >= entry.nextTickTime && entry.nextTickTime <= entry.endTime && statuses.ContainsKey(status))
+                {
+                    entry.nextTickTime += entry.tickInterval;
+                    if (health != null && !health.IsDead)
+                        PlayerCombat.Hit(health, entry.damagePerTick);
+                }
+            }
             for (int i = order.Count - 1; i >= 0; i--)
             {
                 if (Time.time >= statuses[order[i]].endTime)

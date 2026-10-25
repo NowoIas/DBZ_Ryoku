@@ -926,7 +926,12 @@ public class PlayerController : MonoBehaviour
         float damage = isCritical ? character.swordDamage * criticalMultiplier : character.swordDamage;
         // L'épée déborde de sa case : dans ces directions, il passe devant les ennemis pendant le coup (UpdateBeamSorting)
         isSwordInFront = (character.swordInFrontDirections & SideOf(facing)) != 0;
-        yield return PlayAttackState(SwordState, meleeHitTime, () => MeleeHit(damage, isCritical));
+        yield return PlayAttackState(SwordState, meleeHitTime, () => MeleeHit(damage, isCritical, onHit: target =>
+        {
+            if (character.bleedDuration > 0f)
+                StatusEffects.Of(target).AddDamageOverTime(StatusEffects.Bleed, character.bleedDuration,
+                    character.bleedDamage, character.bleedInterval, character.bleedIcon);
+        }));
         isSwordInFront = false;
         nextBeamTime = Time.time + character.swordCooldown;
     }
@@ -1491,8 +1496,10 @@ public class PlayerController : MonoBehaviour
     }
 
     // Frappe la case devant le joueur (seulement ce qui est à son niveau de hauteur) ;
-    // stunDuration > 0 : la cible (ni alliée, ni K.O.) est aussi étourdie (poing de Goten)
-    private void MeleeHit(float damage, bool isCritical, float stunDuration = 0f, Sprite stunIcon = null)
+    // stunDuration > 0 : la cible (ni alliée, ni K.O.) est aussi étourdie (poing de Goten) ;
+    // onHit : appelé sur chaque cible ni alliée ni K.O. après le coup (saignement de l'épée de Trunks)
+    private void MeleeHit(float damage, bool isCritical, float stunDuration = 0f, Sprite stunIcon = null,
+        System.Action<Health> onHit = null)
     {
         Vector2 target = (Vector2)transform.position + facing;
         var hitTargets = new HashSet<Health>();
@@ -1505,6 +1512,8 @@ public class PlayerController : MonoBehaviour
                 PlayerCombat.Hit(targetHealth, damage, isCritical);
                 if (stunDuration > 0f && !targetHealth.IsAlly && !targetHealth.IsDead)
                     StatusEffects.Of(targetHealth).Lock(stunDuration, null, stunIcon);
+                if (onHit != null && !targetHealth.IsAlly && !targetHealth.IsDead)
+                    onHit(targetHealth);
             }
         }
     }

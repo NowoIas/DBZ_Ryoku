@@ -51,6 +51,10 @@ MonoBehaviour:
   swordDamage: 20
   swordCooldown: 0.5
   swordInFrontDirections: 13
+  bleedDuration: 3
+  bleedDamage: 3
+  bleedInterval: 0.5
+  bleedIcon: {fileID: 21300000, guid: 574f432bf93dc0342a8ba00f65d151e9, type: 3}
   noTechniqueOnE: 0
   specialProjectilePrefab: {fileID: 8846146653489414916, guid: 45241b3dbd36162478e3cdee9f86853f, type: 3}
   specialKiCost: 15

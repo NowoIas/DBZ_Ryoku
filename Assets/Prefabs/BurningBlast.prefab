@@ -138,3 +138,15 @@ MonoBehaviour:
   cellsPerFrame: 1
   loopFrameCount: 2
   loopCellsPerFrame: 1
+  rotateWithDirection: 0
+  upOffsetPixels: {x: 0, y: 0}
+  downOffsetPixels: {x: 0, y: 0}
+  leftOffsetPixels: {x: 0, y: 0}
+  rightOffsetPixels: {x: 0, y: 0}
+  lockDuration: 0
+  lockSprite: {fileID: 0}
+  lockIcon: {fileID: 0}
+  burnDuration: 3
+  burnDamage: 5
+  burnInterval: 0.5
+  burnIcon: {fileID: 21300000, guid: 3564e1b95d6473049a60124bdd3cfa60, type: 3}

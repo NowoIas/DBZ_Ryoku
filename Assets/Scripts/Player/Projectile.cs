@@ -53,6 +53,15 @@ public class Projectile : MonoBehaviour
     // Icône de l'état, sur la case au-dessus de la cible
     public Sprite lockIcon;
 
+    // Ennemi ou cible touché : brûlé pendant ce temps (secondes, 0 = non), dégâts répétés (Burning Blast de Trunks)
+    [Min(0f)]
+    public float burnDuration = 0f;
+    [Min(0f)]
+    public float burnDamage = 5f;
+    [Min(0.05f)]
+    public float burnInterval = 0.5f;
+    public Sprite burnIcon;
+
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
 
@@ -247,6 +256,9 @@ public class Projectile : MonoBehaviour
             if (destructibles != null)
                 destructibles.TakeDamage(insideHitCell, damage);
         }
+
+        if (burnDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
+            StatusEffects.Of(health).AddDamageOverTime(StatusEffects.Burn, burnDuration, burnDamage, burnInterval, burnIcon);
 
         // Ennemi ou cible (pas un allié) encore en vie : transformé en ballon, sans impact
         if (lockDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
