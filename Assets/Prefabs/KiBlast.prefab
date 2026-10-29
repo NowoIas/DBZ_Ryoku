@@ -146,3 +146,7 @@ MonoBehaviour:
   lockDuration: 0
   lockSprite: {fileID: 0}
   lockIcon: {fileID: 0}
+  burnDuration: 0
+  burnDamage: 5
+  burnInterval: 0.5
+  burnIcon: {fileID: 0}
