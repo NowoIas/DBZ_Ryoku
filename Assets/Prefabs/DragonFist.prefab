@@ -70,7 +70,7 @@ MonoBehaviour:
   firstBallDistance: 1
   headMinDistance: 1
   headClearanceCells: 1
-  impactDuration: 0.3
+  impactDuration: 0
   damage: 40
   hitLayers:
     serializedVersion: 2
