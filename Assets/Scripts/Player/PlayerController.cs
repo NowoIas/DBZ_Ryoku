@@ -204,6 +204,9 @@ public class PlayerController : MonoBehaviour
     private static readonly int FusionState = Animator.StringToHash("Fusion");
     // Nom du clip de base de l'état Fusion (clé des Override Controllers)
     private const string FusionClipName = "fusion";
+    private static readonly int SwordCriticalState = Animator.StringToHash("SwordCritical");
+    // Un des 4 clips de base de SwordCritical : remplacé dans l'Override = la forme a son coup d'épée critique
+    private const string SwordCriticalClipName = "sword_critical_down";
     private static readonly int TransformSpeed = Animator.StringToHash("transformSpeed");
     private static readonly int DetransformSpeed = Animator.StringToHash("detransformSpeed");
     private static readonly int SpinSpeed = Animator.StringToHash("spinSpeed");
@@ -926,12 +929,14 @@ public class PlayerController : MonoBehaviour
         float damage = isCritical ? character.swordDamage * criticalMultiplier : character.swordDamage;
         // L'épée déborde de sa case : dans ces directions, il passe devant les ennemis pendant le coup (UpdateBeamSorting)
         isSwordInFront = (character.swordInFrontDirections & SideOf(facing)) != 0;
-        yield return PlayAttackState(SwordState, meleeHitTime, () => MeleeHit(damage, isCritical, onHit: target =>
+        // Critique : animation propre (état SwordCritical, planche s2c) si la forme actuelle en a une, sinon s2
+        int state = isCritical && FormOverridesClip(SwordCriticalClipName, false) ? SwordCriticalState : SwordState;
+        yield return PlayAttackState(state, meleeHitTime, () => MeleeHit(damage, isCritical, onHit: target =>
         {
             if (character.bleedDuration > 0f)
                 StatusEffects.Of(target).AddDamageOverTime(StatusEffects.Bleed, character.bleedDuration,
                     character.bleedDamage, character.bleedInterval, character.bleedIcon);
-        }));
+        }, includeSideCells: isCritical)); // critique : les 3 cases devant (dégâts + saignement)
         isSwordInFront = false;
         nextBeamTime = Time.time + character.swordCooldown;
     }
@@ -1339,12 +1344,18 @@ public class PlayerController : MonoBehaviour
     // Sinon elle jouerait celle de la forme normale (Goku SSJ : fusion de Goku normal)
     private bool FormHasOwnFusionClip()
     {
+        return FormOverridesClip(FusionClipName, true);
+    }
+
+    // Le controller actuel remplace-t-il ce clip de base ? (sans Override Controller : ifNoOverride)
+    private bool FormOverridesClip(string clipName, bool ifNoOverride)
+    {
         if (!(animator.runtimeAnimatorController is AnimatorOverrideController current))
-            return true;
+            return ifNoOverride;
         var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
         current.GetOverrides(overrides);
         foreach (var pair in overrides)
-            if (pair.Key.name == FusionClipName)
+            if (pair.Key.name == clipName)
                 return pair.Value != null;
         return false;
     }
@@ -1498,11 +1509,15 @@ public class PlayerController : MonoBehaviour
     // Frappe la case devant le joueur (seulement ce qui est à son niveau de hauteur) ;
     // stunDuration > 0 : la cible (ni alliée, ni K.O.) est aussi étourdie (poing de Goten) ;
     // onHit : appelé sur chaque cible ni alliée ni K.O. après le coup (saignement de l'épée de Trunks)
+    // includeSideCells : frappe aussi les 2 cases voisines de la case devant, sur les côtés (critique de l'épée de Trunks)
     private void MeleeHit(float damage, bool isCritical, float stunDuration = 0f, Sprite stunIcon = null,
-        System.Action<Health> onHit = null)
+        System.Action<Health> onHit = null, bool includeSideCells = false)
     {
-        Vector2 target = (Vector2)transform.position + facing;
+        Vector2 front = (Vector2)transform.position + facing;
+        Vector2 side = new Vector2(-facing.y, facing.x);
+        var targets = includeSideCells ? new[] { front, front + side, front - side } : new[] { front };
         var hitTargets = new HashSet<Health>();
+        foreach (var target in targets)
         foreach (var hit in Physics2D.OverlapCircleAll(target, meleeHitRadius, solidObjectsLayer))
         {
             var targetHealth = hit.GetComponentInParent<Health>();

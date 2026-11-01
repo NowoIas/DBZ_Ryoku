@@ -16,6 +16,7 @@ MonoBehaviour:
   animatorController: {fileID: 22100000, guid: 17462fa7f56f2014f9fd1c5e9378ed98, type: 2}
   transformedControllers:
   - {fileID: 22100000, guid: cbc8318b3a4f8df4caa16ddf61e2469b, type: 2}
+  - {fileID: 22100000, guid: 3293b8ad96289c34aa2b4da85768b03e, type: 2}
   transformAtDetransformSpeed: 0
   transformAtDetransformSpeedPerStage: 
   startSprite: {fileID: -45451206, guid: 260c6e746ede5de46925e02b1cd07f6c, type: 3}

@@ -114,7 +114,7 @@ MonoBehaviour:
   - {fileID: -1458594944443459318, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
   - {fileID: 8151753207020163259, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
   - {fileID: 8864724944932928736, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
-  chargeFramesPerSecond: 10
+  chargeFramesPerSecond: 16
   loopFrames:
   - {fileID: -9020020612223649723, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
   - {fileID: -1612095100, guid: df5b2157d70cc9a4fbcc26106da22ee7, type: 3}
