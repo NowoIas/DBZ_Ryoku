@@ -198,6 +198,54 @@ namespace DBZ.Player
         public AnimatorOverrideController[] transformedGhostControllers = new AnimatorOverrideController[0];
         [Tooltip("Ki payé en devenant fantôme (ensuite, aucune consommation ni limite de durée)")]
         [Min(0f)] public float ghostKiCost = 20f;
+
+        [Header("Icônes des cases du HUD (vide = case vide)")]
+        [Tooltip("Passif : petite case de gauche (l'icône peut dépasser vers le haut)")]
+        public Sprite passiveIcon;
+        [Tooltip("Touche A : Ki Blast")]
+        public Sprite kiBlastIcon;
+        [Tooltip("Touche 1 : transformation")]
+        public Sprite transformIcon;
+        [Tooltip("Touche 2 : fusion")]
+        public Sprite fusionIcon;
+        [Tooltip("Touche E")]
+        public Sprite beamIcon;
+        [Tooltip("Touche R")]
+        public Sprite chargedIcon;
+        [Tooltip("Case 6 (1re petite case de droite) : libre pour l'instant")]
+        public Sprite extraIcon;
+        [Tooltip("Touche F : vol (dernière petite case)")]
+        public Sprite flyIcon;
+
+        // Icône de chaque case du HUD, dans l'ordre de SkillSlot
+        public Sprite GetSkillIcon(SkillSlot slot)
+        {
+            switch (slot)
+            {
+                case SkillSlot.Passive: return passiveIcon;
+                case SkillSlot.KiBlast: return kiBlastIcon;
+                case SkillSlot.Transform: return transformIcon;
+                case SkillSlot.Fusion: return fusionIcon;
+                case SkillSlot.Beam: return beamIcon;
+                case SkillSlot.Charged: return chargedIcon;
+                case SkillSlot.Extra: return extraIcon;
+                case SkillSlot.Fly: return flyIcon;
+                default: return null;
+            }
+        }
+    }
+
+    // Cases de compétences du HUD, de gauche à droite
+    public enum SkillSlot
+    {
+        Passive,
+        KiBlast,
+        Transform,
+        Fusion,
+        Beam,
+        Charged,
+        Extra,
+        Fly,
     }
 
     // Les 8 directions de la lame de la toupie (même ordre que CharacterData.SpinBladeOffsetPixels), combinables

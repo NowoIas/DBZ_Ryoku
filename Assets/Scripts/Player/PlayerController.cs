@@ -145,6 +145,10 @@ public class PlayerController : MonoBehaviour
     private float nextKiBlastTime;
     private float nextBeamTime;
     private float nextChargedTime;
+    // Durée totale de la dernière pause de chaque touche (HUD : part du filtre encore affichée)
+    private float kiBlastCooldownTotal;
+    private float beamCooldownTotal;
+    private float chargedCooldownTotal;
     private bool isFlying;
     // Sorting layer au sol, retrouvé à l'atterrissage
     private string groundSortingLayer;
@@ -758,9 +762,9 @@ public class PlayerController : MonoBehaviour
         // La traînée efface le rayon toute seule ; le joueur reprend la main tout de suite
         beam.Release();
         if (isBeamKey)
-            nextBeamTime = Time.time + beam.Cooldown;
+            nextBeamTime = StartCooldown(ref beamCooldownTotal, beam.Cooldown);
         else
-            nextChargedTime = Time.time + beam.Cooldown;
+            nextChargedTime = StartCooldown(ref chargedCooldownTotal, beam.Cooldown);
         if (!paysWithHealth)
             ki.EndKamehameha();
         animator.ResetTrigger(KamehamehaTrigger);
@@ -820,7 +824,7 @@ public class PlayerController : MonoBehaviour
 
         HideSpinBlade();
         animator.Play(IdleState, 0, 0f);
-        nextBeamTime = Time.time + character.spinCooldown;
+        nextBeamTime = StartCooldown(ref beamCooldownTotal, character.spinCooldown);
         isAttacking = false;
         if (!paysWithHealth)
             ki.EndKiBlast();
@@ -938,7 +942,7 @@ public class PlayerController : MonoBehaviour
                     character.bleedDamage, character.bleedInterval, character.bleedIcon);
         }, includeSideCells: isCritical)); // critique : les 3 cases devant (dégâts + saignement)
         isSwordInFront = false;
-        nextBeamTime = Time.time + character.swordCooldown;
+        nextBeamTime = StartCooldown(ref beamCooldownTotal, character.swordCooldown);
     }
 
     // Coup de poing de Goten (touche R) : comme un coup normal sur la case devant (critique possible), état SpecialShot (planche s3) ;
@@ -952,7 +956,7 @@ public class PlayerController : MonoBehaviour
         float damage = isCritical ? character.stunPunchDamage * criticalMultiplier : character.stunPunchDamage;
         yield return PlayAttackState(SpecialShotState, character.stunPunchHitTime,
             () => MeleeHit(damage, isCritical, character.stunDuration, character.stunIcon));
-        nextChargedTime = Time.time + character.stunPunchCooldown;
+        nextChargedTime = StartCooldown(ref chargedCooldownTotal, character.stunPunchCooldown);
         ki.EndKiBlast();
     }
 
@@ -964,7 +968,7 @@ public class PlayerController : MonoBehaviour
 
         // Le projectile part à la 2e image (bras tendu)
         yield return PlayAttackState(SpecialShotState, 0.5f, () => SpawnProjectile(specialProjectilePrefab));
-        nextChargedTime = Time.time + character.specialCooldown;
+        nextChargedTime = StartCooldown(ref chargedCooldownTotal, character.specialCooldown);
         ki.EndKiBlast();
     }
 
@@ -994,7 +998,7 @@ public class PlayerController : MonoBehaviour
             yield return null;
 
         activeDragonFist = null;
-        nextChargedTime = Time.time + dragonFistPrefab.Cooldown;
+        nextChargedTime = StartCooldown(ref chargedCooldownTotal, dragonFistPrefab.Cooldown);
         ki.EndKiBlast();
         animator.Play(IdleState, 0, 0f);
         isAttacking = false;
@@ -1008,7 +1012,7 @@ public class PlayerController : MonoBehaviour
 
         // Le projectile part à la 2e image (bras tendu)
         yield return PlayAttackState(SpecialShotState, 0.5f, () => SpawnProjectile(projectileOnE));
-        nextBeamTime = Time.time + character.projectileOnECooldown;
+        nextBeamTime = StartCooldown(ref beamCooldownTotal, character.projectileOnECooldown);
         ki.EndKiBlast();
     }
 
@@ -1130,7 +1134,7 @@ public class PlayerController : MonoBehaviour
             yield return null;
 
         activeGenkidama.Release();
-        nextChargedTime = Time.time + activeGenkidama.Cooldown;
+        nextChargedTime = StartCooldown(ref chargedCooldownTotal, activeGenkidama.Cooldown);
         activeGenkidama = null;
         ki.EndGenkidama();
         animator.Play(IdleState, 0, 0f);
@@ -1145,7 +1149,7 @@ public class PlayerController : MonoBehaviour
         isAttacking = true;
         // Le projectile part à la moitié de l'animation (2e image : le bras tendu)
         yield return Attack("rangedAttack", 0.5f, SpawnProjectile);
-        nextKiBlastTime = Time.time + kiBlastCooldown;
+        nextKiBlastTime = StartCooldown(ref kiBlastCooldownTotal, kiBlastCooldown);
         if (!paysWithHealth)
             ki.EndKiBlast();
     }
@@ -1293,6 +1297,38 @@ public class PlayerController : MonoBehaviour
     }
 
     // Fusion en cours : temps restant au chrono (secondes), -1 sans fusion (lu par le HUD)
+    // Pause qui commence : retient sa durée (filtre du HUD) et renvoie l'heure de fin
+    private static float StartCooldown(ref float total, float duration)
+    {
+        total = duration;
+        return Time.time + duration;
+    }
+
+    // Pause restante d'une compétence (secondes, 0 = prête) et sa durée totale, pour le HUD (SkillBar)
+    public float GetCooldown(SkillSlot slot, out float total)
+    {
+        switch (slot)
+        {
+            case SkillSlot.KiBlast:
+                total = kiBlastCooldownTotal;
+                return Mathf.Max(0f, nextKiBlastTime - Time.time);
+            case SkillSlot.Beam:
+                total = beamCooldownTotal;
+                return Mathf.Max(0f, nextBeamTime - Time.time);
+            case SkillSlot.Charged:
+                total = chargedCooldownTotal;
+                return Mathf.Max(0f, nextChargedTime - Time.time);
+            case SkillSlot.Fly:
+                // Vol interdit un moment après un combat ; déjà en vol : rien à attendre
+                total = flyCombatLockout;
+                return isFlying ? 0f : Mathf.Max(0f, flyCombatLockout - PlayerCombat.SecondsSinceFight);
+            default:
+                // Transformation, fusion, passif : pas de pause
+                total = 0f;
+                return 0f;
+        }
+    }
+
     public bool IsFused => PlayerState.FusionOrigin != null;
     public float FusionTimeLeft => IsFused ? Mathf.Max(0f, PlayerState.FusionEndTime - Time.time) : -1f;
 

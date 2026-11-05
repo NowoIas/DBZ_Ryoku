@@ -53,6 +53,10 @@ MonoBehaviour:
   swordDamage: 20
   swordCooldown: 0
   swordInFrontDirections: 13
+  bleedDuration: 0
+  bleedDamage: 3
+  bleedInterval: 0.5
+  bleedIcon: {fileID: 0}
   noTechniqueOnE: 0
   specialProjectilePrefab: {fileID: 0}
   specialKiCost: 15
@@ -75,3 +79,11 @@ MonoBehaviour:
   ghostController: {fileID: 0}
   transformedGhostControllers: []
   ghostKiCost: 20
+  passiveIcon: {fileID: -53002268, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  kiBlastIcon: {fileID: 251116124, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  transformIcon: {fileID: -225640080, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  fusionIcon: {fileID: -773451537, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  beamIcon: {fileID: -703249973, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  chargedIcon: {fileID: 894640661, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  extraIcon: {fileID: 0}
+  flyIcon: {fileID: 21300000, guid: acb5a3747b95dfa4882744812e59b12d, type: 3}
