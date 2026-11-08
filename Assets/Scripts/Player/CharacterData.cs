@@ -133,6 +133,8 @@ namespace DBZ.Player
         [Min(0.05f)] public float bleedInterval = 0.5f;
         [Tooltip("Icône de l'état, sur la case au-dessus de la cible")]
         public Sprite bleedIcon;
+        [Tooltip("Icône animée (remplace bleedIcon si remplie) : une image de plus à chaque tic, en boucle")]
+        public Sprite[] bleedIconFrames;
 
         [Header("Touche E désactivée (Trunks enfant)")]
         [Tooltip("La touche E ne fait rien (personnage sans technique E)")]

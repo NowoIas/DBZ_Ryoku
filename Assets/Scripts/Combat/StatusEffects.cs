@@ -25,6 +25,9 @@ namespace DBZ.Combat
             public float damagePerTick;
             public float tickInterval;
             public float nextTickTime;
+            // Icône animée (vide = icône fixe) : avance d'une image à chaque tic, en boucle
+            public Sprite[] iconFrames;
+            public int iconFrame;
         }
 
         // États en cours, par nom (« stun »...), dans l'ordre d'arrivée (ordre des icônes)
@@ -98,12 +101,20 @@ namespace DBZ.Combat
         }
 
         // Dégâts répétés (saignement, brûlure) : damagePerTick toutes les tickInterval secondes pendant duration ;
-        // relancé : la durée repart de zéro, les dégâts ne s'additionnent pas (le rythme des tics continue)
-        public void AddDamageOverTime(string status, float duration, float damagePerTick, float tickInterval, Sprite icon)
+        // relancé : la durée repart de zéro, les dégâts ne s'additionnent pas (le rythme des tics continue).
+        // iconFrames (facultatif) : images de l'icône, une de plus à chaque tic (remplace icon)
+        public void AddDamageOverTime(string status, float duration, float damagePerTick, float tickInterval, Sprite icon,
+            Sprite[] iconFrames = null)
         {
             bool isNew = !statuses.ContainsKey(status);
-            Add(status, duration, icon);
+            bool isAnimated = iconFrames != null && iconFrames.Length > 0 && iconFrames[0] != null;
+            Add(status, duration, isAnimated ? iconFrames[0] : icon);
             var entry = statuses[status];
+            if (isNew && isAnimated)
+            {
+                entry.iconFrames = iconFrames;
+                entry.iconFrame = 0;
+            }
             entry.damagePerTick = damagePerTick;
             entry.tickInterval = Mathf.Max(0.05f, tickInterval);
             if (isNew)
@@ -172,6 +183,7 @@ namespace DBZ.Combat
                 while (Time.time >= entry.nextTickTime && entry.nextTickTime <= entry.endTime && statuses.ContainsKey(status))
                 {
                     entry.nextTickTime += entry.tickInterval;
+                    NextIconFrame(entry);
                     if (health != null && !health.IsDead)
                         PlayerCombat.Hit(health, entry.damagePerTick);
                 }
@@ -181,6 +193,15 @@ namespace DBZ.Combat
                 if (Time.time >= statuses[order[i]].endTime)
                     Remove(order[i]);
             }
+        }
+
+        private static void NextIconFrame(Status entry)
+        {
+            if (entry.icon == null || entry.iconFrames == null || entry.iconFrames.Length == 0)
+                return;
+            entry.iconFrame = (entry.iconFrame + 1) % entry.iconFrames.Length;
+            if (entry.iconFrames[entry.iconFrame] != null)
+                entry.icon.sprite = entry.iconFrames[entry.iconFrame];
         }
 
         // Après l'Animator et les scripts qui changent l'image : le ballon reste affiché ; les icônes suivent la case

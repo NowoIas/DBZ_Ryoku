@@ -7,7 +7,7 @@ namespace DBZ.Combat
     // Big Bang (Vegeta, touche R) : la boule grossit sur la case devant le joueur (chargeFrames, une fois),
     // puis loopFrames alternent tant que la touche est tenue. Au relâchement, même pendant la charge, elle part tout droit,
     // lentement, en gardant l'image affichée à ce moment-là.
-    // Elle est large de 3 cases (sa case et une de chaque côté) : elle explose sur le premier ennemi, cible ou Destructible
+    // Elle est large de 3 cases (sa case et une de chaque côté), ou d'une seule si relâchée avant fullWidthFromFrame : elle explose sur le premier ennemi, cible ou Destructible
     // de cette largeur, ou contre un mur (calques de collision, sur sa ligne centrale), et frappe tout sur les 3 cases.
     // Au bout de sa portée, elle disparaît sans exploser
     [RequireComponent(typeof(SpriteRenderer))]
@@ -36,6 +36,10 @@ namespace DBZ.Combat
         [Tooltip("Cases touchées de chaque côté de la ligne du tir : 1 = 3 cases de large")]
         [Min(0)]
         [SerializeField] private int halfWidth = 1;
+        [Tooltip("Image (numéro dans le chargement puis la boucle, depuis 0) à partir de laquelle la boule a toute sa largeur ; "
+                 + "relâchée avant, elle ne touche que la case de sa ligne")]
+        [Min(0)]
+        [SerializeField] private int fullWidthFromFrame = 5;
         [Tooltip("Layer(s) touchés : cibles, ennemis, Destructibles")]
         [SerializeField] private LayerMask hitLayers;
         [SerializeField] private float hitRadius = 0.3f;
@@ -55,6 +59,9 @@ namespace DBZ.Combat
         private int level;
         private float age;
         private bool isReleased;
+        // Numéro de l'image affichée (chargement puis boucle) et largeur retenue au relâchement
+        private int displayedFrame;
+        private int activeHalfWidth;
         // Distance parcourue depuis la rangée 0, en cases, et dernière rangée vérifiée
         private float traveled;
         private int row;
@@ -75,6 +82,8 @@ namespace DBZ.Combat
         public override void Release()
         {
             isReleased = true;
+            // Petite boule (avant fullWidthFromFrame) : une seule case de large
+            activeHalfWidth = displayedFrame >= fullWidthFromFrame ? halfWidth : 0;
             // Rangée 0 : un mur juste devant le joueur, ou une cible déjà dans la boule
             Vector2 playerCell = start - direction;
             if (!CollisionMap.CanTechniquePass(playerCell, direction, level))
@@ -145,22 +154,31 @@ namespace DBZ.Combat
             age += Time.deltaTime;
             int frame = (int)(age * chargeFramesPerSecond);
             Sprite sprite = null;
+            int index = -1;
             if (frame < chargeFrames.Length)
+            {
                 sprite = chargeFrames[frame];
+                index = frame;
+            }
             else if (loopFrames.Length > 0)
             {
                 float loopTime = age - chargeFrames.Length / chargeFramesPerSecond;
-                sprite = loopFrames[(int)(loopTime * loopFramesPerSecond) % loopFrames.Length];
+                int loopIndex = (int)(loopTime * loopFramesPerSecond) % loopFrames.Length;
+                sprite = loopFrames[loopIndex];
+                index = chargeFrames.Length + loopIndex;
             }
             if (sprite != null)
+            {
                 ballRenderer.sprite = sprite;
+                displayedFrame = index;
+            }
         }
 
-        // Cases d'une rangée : la case de la ligne du tir et halfWidth cases de chaque côté
+        // Cases d'une rangée : la case de la ligne du tir et activeHalfWidth cases de chaque côté
         private IEnumerable<Vector2> RowCells(int index)
         {
             Vector2 side = new Vector2(-direction.y, direction.x);
-            for (int s = -halfWidth; s <= halfWidth; s++)
+            for (int s = -activeHalfWidth; s <= activeHalfWidth; s++)
                 yield return RowCenter(index) + side * s;
         }
 

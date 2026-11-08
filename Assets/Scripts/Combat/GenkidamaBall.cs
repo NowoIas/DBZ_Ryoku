@@ -58,7 +58,12 @@ namespace DBZ.Combat
         [SerializeField] private OneShotEffect impactPrefab;
 
         [Header("Affichage")]
-        // La boule est en l'air : au-dessus de tout (sous Goku en vol, ordre 50)
+        [Tooltip("Coché : la boule est au rang des techniques (calque player, comme le Ki Blast) et passe derrière les Foreground. "
+                 + "Décoché : ancien affichage, devant tout (ballSortingLayer / ballSortingOrder)")]
+        [SerializeField] private bool ballBehindForeground = true;
+        // Rang des techniques dans la tranche du niveau (LevelMap.SortingOrdersPerLevel), comme le Ki Blast
+        [SerializeField] private int ballSortingRank = 1;
+        // Ancien affichage : la boule en l'air au-dessus de tout (sous Goku en vol, ordre 50)
         [SerializeField] private string ballSortingLayer = "foreground";
         [SerializeField] private int ballSortingOrder = 40;
         // La cible est au sol : rang des impacts dans la tranche du niveau (LevelMap.SortingOrdersPerLevel)
@@ -96,8 +101,16 @@ namespace DBZ.Combat
         {
             transform.position = (Vector3)playerCellCenter + Vector3.up;
             ballRenderer = GetComponent<SpriteRenderer>();
-            ballRenderer.sortingLayerName = ballSortingLayer;
-            ballRenderer.sortingOrder = ballSortingOrder;
+            if (ballBehindForeground)
+            {
+                ballRenderer.sortingLayerName = "player";
+                ballRenderer.sortingOrder = ballSortingRank + level * LevelMap.SortingOrdersPerLevel;
+            }
+            else
+            {
+                ballRenderer.sortingLayerName = ballSortingLayer;
+                ballRenderer.sortingOrder = ballSortingOrder;
+            }
             ballRenderer.sprite = ballFrames[0];
 
             direction = dir;

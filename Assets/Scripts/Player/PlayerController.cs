@@ -939,7 +939,7 @@ public class PlayerController : MonoBehaviour
         {
             if (character.bleedDuration > 0f)
                 StatusEffects.Of(target).AddDamageOverTime(StatusEffects.Bleed, character.bleedDuration,
-                    character.bleedDamage, character.bleedInterval, character.bleedIcon);
+                    character.bleedDamage, character.bleedInterval, character.bleedIcon, character.bleedIconFrames);
         }, includeSideCells: isCritical)); // critique : les 3 cases devant (dégâts + saignement)
         isSwordInFront = false;
         nextBeamTime = StartCooldown(ref beamCooldownTotal, character.swordCooldown);

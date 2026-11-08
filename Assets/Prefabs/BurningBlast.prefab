@@ -150,3 +150,8 @@ MonoBehaviour:
   burnDamage: 5
   burnInterval: 0.5
   burnIcon: {fileID: 21300000, guid: 3564e1b95d6473049a60124bdd3cfa60, type: 3}
+  burnIconFrames:
+  - {fileID: 8588154091984081858, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
+  - {fileID: 697496885, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
+  - {fileID: -141845484, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
+  - {fileID: -716262048, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}

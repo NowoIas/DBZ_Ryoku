@@ -159,7 +159,7 @@ MonoBehaviour:
     CustomLookAtTarget: 0
   Lens:
     FieldOfView: 40
-    OrthographicSize: 5
+    OrthographicSize: 16.875
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
@@ -405,8 +405,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.2D.Runtime::UnityEngine.Rendering.Universal.PixelPerfectCamera
   m_ComponentVersion: 1
   m_AssetsPPU: 32
-  m_RefResolutionX: 480
-  m_RefResolutionY: 270
+  m_RefResolutionX: 1920
+  m_RefResolutionY: 1080
   m_CropFrame: 0
   m_GridSnapping: 0
   m_FilterMode: 0

@@ -61,6 +61,8 @@ public class Projectile : MonoBehaviour
     [Min(0.05f)]
     public float burnInterval = 0.5f;
     public Sprite burnIcon;
+    [Tooltip("Icône animée (remplace burnIcon si remplie) : une image de plus à chaque tic, en boucle")]
+    public Sprite[] burnIconFrames;
 
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
@@ -258,7 +260,7 @@ public class Projectile : MonoBehaviour
         }
 
         if (burnDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
-            StatusEffects.Of(health).AddDamageOverTime(StatusEffects.Burn, burnDuration, burnDamage, burnInterval, burnIcon);
+            StatusEffects.Of(health).AddDamageOverTime(StatusEffects.Burn, burnDuration, burnDamage, burnInterval, burnIcon, burnIconFrames);
 
         // Ennemi ou cible (pas un allié) encore en vie : transformé en ballon, sans impact
         if (lockDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
