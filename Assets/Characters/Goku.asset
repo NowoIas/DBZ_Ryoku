@@ -57,6 +57,7 @@ MonoBehaviour:
   bleedDamage: 3
   bleedInterval: 0.5
   bleedIcon: {fileID: 0}
+  bleedIconFrames: []
   noTechniqueOnE: 0
   specialProjectilePrefab: {fileID: 0}
   specialKiCost: 15
@@ -82,6 +83,10 @@ MonoBehaviour:
   passiveIcon: {fileID: -53002268, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
   kiBlastIcon: {fileID: 251116124, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
   transformIcon: {fileID: -225640080, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
+  transformedTransformIcons:
+  - {fileID: 21300000, guid: 381c8c755d032854488943c9a82c484e, type: 3}
+  - {fileID: 21300000, guid: 1922cdea7eda90a4c91e16f3d772957a, type: 3}
+  - {fileID: 21300000, guid: 1922cdea7eda90a4c91e16f3d772957a, type: 3}
   fusionIcon: {fileID: -773451537, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
   beamIcon: {fileID: -703249973, guid: e49885b0232eed4448701d7a4489c47c, type: 3}
   chargedIcon: {fileID: 894640661, guid: e49885b0232eed4448701d7a4489c47c, type: 3}

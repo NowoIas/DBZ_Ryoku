@@ -85,7 +85,7 @@ namespace DBZ.Combat
         [SerializeField] private int targetOverlapPixels = 0;
 
         [Header("Ouverture / fermeture (0 = aucune, Kamehameha)")]
-        [Tooltip("Temps pour qu'une case s'élargisse d'un trait fin à sa taille normale, après son apparition (secondes)")]
+        [Tooltip("Temps pour que tout le rayon s'élargisse ensemble d'un trait fin à sa taille normale, depuis sa sortie (secondes)")]
         [Min(0f)]
         [SerializeField] private float openDuration = 0f;
         [Tooltip("Au relâchement, tout le rayon s'amincit d'un coup jusqu'à disparaître, en ce temps (secondes). "
@@ -144,8 +144,8 @@ namespace DBZ.Combat
         // Nombre de cases déjà effacées par la traînée
         private float trail;
         private float damageTimer;
-        // Moment où chaque case est apparue (début de son ouverture)
-        private float[] cellAppearTimes;
+        // Apparition de la 1re case : début de l'ouverture, commune à tout le rayon (-1 = pas encore sorti)
+        private float openStartTime = -1f;
         // Cases affichées à la dernière image, figées au relâchement pour la fermeture
         private int lastVisible;
         private int releaseVisible;
@@ -174,7 +174,6 @@ namespace DBZ.Combat
             int segments = maxLength * segmentsPerCell;
             cells = new SpriteRenderer[segments];
             cellLevels = new int[maxLength];
-            cellAppearTimes = new float[segments];
             segmentPositions = new Vector3[segments];
             for (int i = 0; i < segments; i++)
             {
@@ -425,11 +424,13 @@ namespace DBZ.Combat
                 Destroy(gameObject);
         }
 
+        // Toutes les cases s'élargissent ensemble (comme la fermeture) : une case sortie plus tard prend
+        // directement l'épaisseur du reste du rayon
         private float OpenFactor(int index)
         {
-            if (openDuration <= 0f)
+            if (openDuration <= 0f || openStartTime < 0f)
                 return 1f;
-            return Mathf.Clamp01((Time.time - cellAppearTimes[index]) / openDuration);
+            return Mathf.Clamp01((Time.time - openStartTime) / openDuration);
         }
 
         // Épaisseur (perpendiculaire au rayon : y local, les sprites étant dessinés vers la droite), arrondie à un nombre pair
@@ -539,9 +540,9 @@ namespace DBZ.Combat
                     continue;
                 }
 
-                // Case qui apparaît : début de son ouverture
-                if (!sr.enabled)
-                    cellAppearTimes[i] = Time.time;
+                // 1re case qui apparaît : début de l'ouverture de tout le rayon
+                if (!sr.enabled && openStartTime < 0f)
+                    openStartTime = Time.time;
                 sr.enabled = true;
                 int cellLevel = cellLevels[i / segmentsPerCell];
                 // Au-dessus des personnages (rang 0), départ compris : le joueur passe lui-même devant son départ

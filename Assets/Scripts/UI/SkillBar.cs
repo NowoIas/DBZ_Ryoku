@@ -35,6 +35,12 @@ namespace DBZ.UI
         [SerializeField] private Sprite dotSprite;
         [Tooltip("Joueur suivi (vide = l'objet tagué Player)")]
         [SerializeField] private PlayerController player;
+        [Tooltip("Teinte de l'icône quand la compétence n'est plus possible (ex. dernière forme : plus de transformation)")]
+        [SerializeField] private Color unavailableColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+
+        private int shownStage = -1;
+        private bool shownCanTransform = true;
+        private bool shownCanFuse = true;
 
         // « 9.4 » ou « 14 » : 3 caractères au plus (une case fait 14 à 16 px, un chiffre 5)
         private const int MaxChars = 3;
@@ -66,11 +72,41 @@ namespace DBZ.UI
             }
 
             // Changement de perso (F2, fusion, séparation) : nouvelles icônes
-            if (player.character != shownCharacter)
+            bool characterChanged = player.character != shownCharacter;
+            if (characterChanged)
             {
                 shownCharacter = player.character;
                 foreach (var slot in slots)
                     ShowIcon(slot, shownCharacter != null ? shownCharacter.GetSkillIcon(slot.skill) : null);
+            }
+
+            // Case transformation : icône de la transformation suivante, grisée s'il n'y en a plus
+            int stage = player.TransformationStage;
+            bool canTransform = player.HasNextTransformation;
+            if (characterChanged || stage != shownStage || canTransform != shownCanTransform)
+            {
+                shownStage = stage;
+                shownCanTransform = canTransform;
+                foreach (var slot in slots)
+                {
+                    if (slot.skill != SkillSlot.Transform)
+                        continue;
+                    ShowIcon(slot, shownCharacter != null ? shownCharacter.GetTransformIcon(stage) : null);
+                    if (slot.icon != null)
+                        slot.icon.color = canTransform ? Color.white : unavailableColor;
+                }
+            }
+
+            // Case fusion : grisée quand la forme actuelle ne permet pas de fusionner
+            bool canFuse = player.CanFuseInCurrentForm;
+            if (characterChanged || canFuse != shownCanFuse)
+            {
+                shownCanFuse = canFuse;
+                foreach (var slot in slots)
+                {
+                    if (slot.skill == SkillSlot.Fusion && slot.icon != null)
+                        slot.icon.color = canFuse ? Color.white : unavailableColor;
+                }
             }
 
             foreach (var slot in slots)
@@ -123,8 +159,11 @@ namespace DBZ.UI
                 width += sprites[i].rect.width;
             }
 
+            // Centré sur la partie blanche : la dernière colonne du dernier caractère est son ombre (ignorée),
+            // et un demi-pixel restant va à droite
+            float visibleWidth = width > 0f ? width - 1f : 0f;
             Vector2 boxSize = slot.box.rect.size;
-            float x = Mathf.Floor((boxSize.x - width) / 2f);
+            float x = Mathf.Ceil((boxSize.x - visibleWidth) / 2f);
             const float y = 0f;
             for (int i = 0; i < MaxChars; i++)
             {

@@ -130,6 +130,14 @@ public class PlayerController : MonoBehaviour
     public int Level => isFlying ? HeightLevel.Air : level;
     // En vol, les ennemis ne le repèrent pas
     public bool IsFlying => isFlying;
+    // Pour le HUD : palier de la forme actuelle (0 = normal) et transformation suivante possible ou non
+    public int TransformationStage => ki != null ? ki.Level : 0;
+    public bool HasNextTransformation => ki != null && NextTransformationStage() > 0;
+    // Fusion permise par le perso et la forme actuelle (normale, ou transformée avec sa propre animation de fusion) ;
+    // ni le Ki ni le sol ne comptent ici (aussi lu par le HUD pour griser la case)
+    public bool CanFuseInCurrentForm => ki != null && character != null && character.fusionCharacter != null
+        && (ki.CurrentForm == PlayerKi.Form.Normal
+            || (ki.CurrentForm == PlayerKi.Form.Transformed && FormHasOwnFusionClip()));
     public Vector3 OccupiedCell => isMoving ? moveTarget : transform.position;
     private bool isMoving;
     // Case visée par le déplacement en cours
@@ -529,10 +537,7 @@ public class PlayerController : MonoBehaviour
             }
             // Fusion (Goten → Gotenks, Goku / Vegeta → Gogeta) : en forme normale, ou transformée si la forme a sa propre
             // animation de fusion (Goten SSJ → Gotenks SSJ), au sol
-            else if (fusionPressed && character != null && character.fusionCharacter != null
-                     && (ki.CurrentForm == PlayerKi.Form.Normal
-                         || (ki.CurrentForm == PlayerKi.Form.Transformed && FormHasOwnFusionClip()))
-                     && ki.CanSpend(character.fusionKiCost))
+            else if (fusionPressed && CanFuseInCurrentForm && ki.CanSpend(character.fusionKiCost))
             {
                 StartCoroutine(Fusion());
             }

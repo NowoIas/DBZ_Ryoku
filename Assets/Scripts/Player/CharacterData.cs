@@ -208,6 +208,9 @@ namespace DBZ.Player
         public Sprite kiBlastIcon;
         [Tooltip("Touche 1 : transformation")]
         public Sprite transformIcon;
+        [Tooltip("Touche 1 en forme transformée : 1 icône par palier (case 0 = en palier 1, ex. SSJ → icône SSJ3) ; " +
+                 "vide = transformIcon. Plus de transformation possible : l'icône est grisée")]
+        public Sprite[] transformedTransformIcons = new Sprite[0];
         [Tooltip("Touche 2 : fusion")]
         public Sprite fusionIcon;
         [Tooltip("Touche E")]
@@ -234,6 +237,15 @@ namespace DBZ.Player
                 case SkillSlot.Fly: return flyIcon;
                 default: return null;
             }
+        }
+
+        // Icône de la case transformation selon le palier actuel (0 = normal)
+        public Sprite GetTransformIcon(int stage)
+        {
+            int index = stage - 1;
+            if (index >= 0 && index < transformedTransformIcons.Length && transformedTransformIcons[index] != null)
+                return transformedTransformIcons[index];
+            return transformIcon;
         }
     }
 
