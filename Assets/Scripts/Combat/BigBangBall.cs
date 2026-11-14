@@ -47,6 +47,19 @@ namespace DBZ.Combat
         [Tooltip("Effet joué sur chaque case touchée (sur la case centrale contre un mur)")]
         [SerializeField] private OneShotEffect impactPrefab;
 
+        [Header("Eau (WaterRipples, shader des tilemaps)")]
+        [Tooltip("La boule laisse un sillage en V sur l'eau qu'elle survole, et des anneaux quand elle explose")]
+        [SerializeField] private bool makesWaterRipples = true;
+        [Tooltip("Distance entre la ligne du tir et le départ du sillage, en pixels : le bord de la petite boule, puis de la grosse")]
+        [SerializeField] private float wakeStartPixelsSmall = 10f;
+        [SerializeField] private float wakeStartPixelsFull = 28f;
+        [Tooltip("Écartement du sillage au-delà du bord de la boule, en pixels, et sa durée en secondes")]
+        [SerializeField] private float wakeSpreadPixels = 30f;
+        [SerializeField] private float wakeDuration = 1.2f;
+        [Tooltip("Explosion : distance maximale des anneaux depuis le centre, en pixels (grosse boule ; petite : 70 %), et durée en secondes")]
+        [SerializeField] private float ringMaxPixels = 80f;
+        [SerializeField] private float ringDuration = 1.2f;
+
         [Header("Affichage")]
         [SerializeField] private string sortingLayerName = "player";
         // Rang des techniques dans la tranche du niveau (LevelMap.SortingOrdersPerLevel)
@@ -111,6 +124,11 @@ namespace DBZ.Combat
 
             traveled = Mathf.Min(traveled + cellsPerSecond * Time.deltaTime, maxDistance);
             transform.position = Snap(start + direction * traveled);
+            if (makesWaterRipples)
+            {
+                float wakeStart = activeHalfWidth > 0 ? wakeStartPixelsFull : wakeStartPixelsSmall;
+                WaterRipples.SetProjectile(this, start, transform.position, wakeStart, wakeStart + wakeSpreadPixels, wakeDuration);
+            }
 
             // La boule entre dans une rangée quand son centre en passe la moitié
             int reached = Mathf.Min(Mathf.FloorToInt(traveled + 0.5f), maxDistance);
@@ -223,7 +241,20 @@ namespace DBZ.Combat
             // Contre un mur, sans rien d'autre de touché : l'effet sur la case centrale
             if (againstWall && !hitSomething)
                 SpawnImpact(RowCenter(index));
+            if (makesWaterRipples)
+            {
+                // Anneaux depuis le bord de la boule ; petite boule : plus petits
+                bool isFull = activeHalfWidth > 0;
+                WaterRipples.AddRing(RowCenter(index), isFull ? wakeStartPixelsFull : wakeStartPixelsSmall,
+                    isFull ? ringMaxPixels : ringMaxPixels * 0.7f, ringDuration, 2);
+            }
             Destroy(gameObject);
+        }
+
+        // Boule disparue (explosion, bout de portée, annulation) : son sillage finit de s'écarter
+        private void OnDestroy()
+        {
+            WaterRipples.EndProjectile(this);
         }
 
         private void SpawnImpact(Vector2 cell)

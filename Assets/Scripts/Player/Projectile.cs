@@ -64,6 +64,9 @@ public class Projectile : MonoBehaviour
     [Tooltip("Icône animée (remplace burnIcon si remplie) : une image de plus à chaque tic, en boucle")]
     public Sprite[] burnIconFrames;
 
+    [Tooltip("Le projectile laisse un sillage en V sur l'eau qu'il survole (WaterRipples, shader des tilemaps)")]
+    public bool makesWaterRipples = true;
+
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
 
@@ -79,6 +82,8 @@ public class Projectile : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     // Ordre d'affichage réglé dans le prefab = celui du niveau 0 ; décalé selon le niveau du projectile
     private int baseSortingOrder;
+    // Point de départ du trajet, pour le sillage sur l'eau
+    private Vector2 waterStart;
 
     public void Launch(Vector2 dir, int launchLevel)
     {
@@ -96,6 +101,7 @@ public class Projectile : MonoBehaviour
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         Vector2Int offset = dir.y > 0 ? upOffsetPixels : dir.y < 0 ? downOffsetPixels : dir.x < 0 ? leftOffsetPixels : rightOffsetPixels;
         transform.position += new Vector3(offset.x, offset.y, 0f) / 32f;
+        waterStart = transform.position;
         UpdateFrame();
 
         if (maxDistance <= 0f)
@@ -155,12 +161,20 @@ public class Projectile : MonoBehaviour
 
         transform.position += (Vector3)(direction * distance);
         traveled += distance;
+        if (makesWaterRipples)
+            WaterRipples.SetProjectile(this, waterStart, transform.position);
         if (lastStep)
         {
             Destroy(gameObject);
             return;
         }
         UpdateFrame();
+    }
+
+    // Projectile disparu (impact, bout de portée, changement de scène) : son sillage finit de s'écarter
+    private void OnDestroy()
+    {
+        WaterRipples.EndProjectile(this);
     }
 
     // Une nouvelle image toutes les cellsPerFrame cases parcourues, puis la boucle des dernières (loopFrameCount)

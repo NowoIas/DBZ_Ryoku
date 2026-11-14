@@ -73,6 +73,17 @@ namespace DBZ.Combat
         [SerializeField] private string groundImpactSortingLayer = "background";
         [SerializeField] private int groundImpactSortingOrder = 20;
 
+        [Header("Eau (WaterRipples, shader des tilemaps)")]
+        [Tooltip("L'explosion fait des ondes circulaires sur l'eau autour d'elle")]
+        [SerializeField] private bool makesWaterRipples = true;
+        [Tooltip("Anneaux : distance de départ et distance maximale depuis le centre de l'explosion, en pixels (32 par case)")]
+        [SerializeField] private float ringStartPixels = 24f;
+        [SerializeField] private float ringMaxPixels = 128f;
+        [Tooltip("Durée des ondes, en secondes, et nombre d'anneaux")]
+        [SerializeField] private float ringDuration = 1.5f;
+        [Min(1)]
+        [SerializeField] private int ringCount = 3;
+
         public bool IsReady { get; private set; }
 
         private SpriteRenderer ballRenderer;
@@ -267,6 +278,9 @@ namespace DBZ.Combat
                     }
                 }
             }
+
+            if (makesWaterRipples)
+                WaterRipples.AddRing(impactCell, ringStartPixels, ringMaxPixels, ringDuration, ringCount);
 
             if (impactPrefab != null)
             {

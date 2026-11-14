@@ -108,6 +108,8 @@ namespace DBZ.Combat
         [Tooltip("Directions où le rayon passe derrière la cible (bas : le rayon arrive par le haut de sa case, vue de dessus) : "
             + "tout le rayon passe sous les personnages dès qu'il touche une cible (le joueur passe alors sous son rayon)")]
         [SerializeField] private CellSides tipBehindTargetDirections = CellSides.Down;
+        [Tooltip("Le rayon fait des vaguelettes sur l'eau autour de lui (WaterRipples, shader des tilemaps)")]
+        [SerializeField] private bool makesWaterRipples = true;
 
         public bool IsReleased { get; private set; }
         public float Cooldown => cooldown;
@@ -272,6 +274,7 @@ namespace DBZ.Combat
             IsReleased = true;
             releaseTime = Time.time;
             releaseVisible = lastVisible;
+            WaterRipples.EndBeam(this);
         }
 
         private void Update()
@@ -362,6 +365,12 @@ namespace DBZ.Combat
             }
 
             lastVisible = visibleSegments;
+            // Sillage sur l'eau : tracé affiché, du bord de la case devant le tireur jusqu'au bout du rayon
+            if (makesWaterRipples && !IsReleased)
+            {
+                Vector2 beamStart = CellCenter(0) - direction * 0.5f;
+                WaterRipples.SetBeam(this, beamStart, beamStart + direction * ((float)visibleSegments / segmentsPerCell));
+            }
             // Bout avancé dans la case de la cible : arrêté par un objet (pas un mur), pas collé à lui, rayon arrivé jusqu'à lui
             bool reachesTarget = target != null && blockedIndex > 0 && visibleSegments == blockedIndex * segmentsPerCell;
             if (!piercesTargets && !IsReleased)
@@ -640,6 +649,8 @@ namespace DBZ.Combat
 
         private void OnDestroy()
         {
+            // Rayon détruit sans relâchement (changement de scène...) : ses vagues s'éteignent quand même
+            WaterRipples.EndBeam(this);
             foreach (var cut in cutLaunchSprites.Values)
                 Destroy(cut);
         }
