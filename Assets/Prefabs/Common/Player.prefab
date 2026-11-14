@@ -95,6 +95,8 @@ GameObject:
   - component: {fileID: 8022696846420452834}
   - component: {fileID: 1600971091241773864}
   - component: {fileID: 5482455977192904936}
+  - component: {fileID: 5978653041979736278}
+  - component: {fileID: 6625029623467690947}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -349,3 +351,38 @@ MonoBehaviour:
   showHeal: 1
   offset: {x: 0, y: 0.5}
   horizontalJitter: 4
+--- !u!114 &5978653041979736278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8383698867614165709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44ab879969a4aa848b65baa841c68d93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.FlightWaterWake
+  makesWaterRipples: 1
+  wakeStartPixels: 6
+  wakeRangePixels: 32
+  wakeDuration: 0.8
+--- !u!114 &6625029623467690947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8383698867614165709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 798e824368d54384fa76427b1376fd39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.FlightWindEffect
+  showsWind: 1
+  windMaterial: {fileID: 2100000, guid: 548ac541f22211c46bbe63b525a8620b, type: 2}
+  sizeCells: 3
+  fadeInDuration: 0.1
+  fadeOutDuration: 0.15
+  sortingLayerName: foreground
+  sortingOrder: 51

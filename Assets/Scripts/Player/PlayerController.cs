@@ -130,6 +130,8 @@ public class PlayerController : MonoBehaviour
     public int Level => isFlying ? HeightLevel.Air : level;
     // En vol, les ennemis ne le repèrent pas
     public bool IsFlying => isFlying;
+    // Fantôme de Gotenks (vole aussi, mais ne fait pas de vagues sur l'eau)
+    public bool IsGhost => isGhost;
     // Pour le HUD : palier de la forme actuelle (0 = normal) et transformation suivante possible ou non
     public int TransformationStage => ki != null ? ki.Level : 0;
     public bool HasNextTransformation => ki != null && NextTransformationStage() > 0;
