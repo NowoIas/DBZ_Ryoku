@@ -26,11 +26,20 @@ Shader "DBZ/Tilemap Effects"
         _WaveRange("Distance maximale depuis le rayon (pixels)", Float) = 48
         _WaveDash("Longueur des traits d'une vague (pixels)", Float) = 6
         _WaveStart("Distance de la premiere vague (pixels)", Float) = 6
+        _BeamWakeRange("Rayon qui avance : ecartement maximal du V (pixels)", Float) = 40
+        _BeamWakeDuration("Rayon qui avance : duree de la vague du V (secondes, 0 = pas de V)", Float) = 0.8
 
         [Header(Sillage des projectiles)]
         _WakeRange("Ecartement maximal du sillage (pixels)", Float) = 28
         _WakeDuration("Duree de la vague du sillage (secondes)", Float) = 0.6
         _WakeStart("Distance de depart du sillage (pixels)", Float) = 3
+
+        [Header(Trace brulee des rayons sur la terre)]
+        _ScorchStrength("Force de la trace (0 = pas de trace)", Range(0, 1)) = 0.8
+        _ScorchColor("Teinte du sol brule (multiplie la couleur du sol)", Color) = (0.35, 0.28, 0.22, 1)
+        _ScorchWidth("Demi-largeur de la trace (pixels)", Float) = 5
+        _ScorchDuration("Duree de la trace apres le tir (secondes)", Float) = 2
+        _EmberColor("Couleur des braises", Color) = (1, 0.6, 0.2, 1)
 
         [Header(Ondes circulaires (explosions))]
         _RingSpacing("Ecart entre deux anneaux (pixels)", Float) = 10
@@ -89,7 +98,7 @@ Shader "DBZ/Tilemap Effects"
                 half4 color        : COLOR;
                 // EAU : position dans le monde (en cases), pour situer le pixel par rapport aux rayons
                 float2 waterPos    : TEXCOORD4;
-                // VENT : marque de la tuile (0 = aucune, 1 à 8 = feuillage)
+                // Marque de la tuile (0 = aucune, 1 à 8 = feuillage qui prend le vent, 9 = eau)
                 half wind          : TEXCOORD5;
             };
 
@@ -110,6 +119,13 @@ Shader "DBZ/Tilemap Effects"
                 float _WakeRange;
                 float _WakeDuration;
                 float _WakeStart;
+                float _BeamWakeRange;
+                float _BeamWakeDuration;
+                float _ScorchStrength;
+                half4 _ScorchColor;
+                float _ScorchWidth;
+                float _ScorchDuration;
+                half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;
                 float _WindEdge;
@@ -230,7 +246,30 @@ Shader "DBZ/Tilemap Effects"
 
                     // Rayon : les vagues partent du rayon et s'éloignent ; après la fin du tir, plus de nouvelle vague :
                     // la zone calme s'élargit depuis le rayon jusqu'à tout effacer
-                    float front = min(_WaveStart + age * _WaveSpeed, _WaveRange);
+                    // Rayon qui avance : chaque point de l'eau ne réagit qu'au passage du bout du rayon (extras.x = sa vitesse,
+                    // en cases par seconde ; 0 = tout le rayon d'un coup)
+                    float localAge = age;
+                    if (extras.x > 0.0)
+                        localAge -= clamp(along, 0.0, len) / len * length(_WaterBeams[i].zw - _WaterBeams[i].xy) / extras.x;
+                    if (localAge < 0.0)
+                        continue;
+
+                    // Sillage en V qui suit le bout, comme celui d'un projectile : une vague part de chaque point à son
+                    // passage, s'écarte vite puis ralentit, et s'éteint
+                    if (extras.x > 0.0 && _BeamWakeDuration > 0.0 && along >= 0.0 && along <= len)
+                    {
+                        float beamU = localAge / _BeamWakeDuration;
+                        if (beamU < 1.0)
+                        {
+                            float beamCrest = _WaveStart + (_BeamWakeRange - _WaveStart) * (1.0 - (1.0 - beamU) * (1.0 - beamU));
+                            float beamSide = dir.x * (p.y - a.y) - dir.y * (p.x - a.x) > 0.0 ? 1.0 : 2.0;
+                            float beamRandom = frac(sin(dot(float2(floor(along / _WaveDash), beamSide + times.x), float2(12.9898, 78.233))) * 43758.5453);
+                            best = max(best, CrestShade(beamCrest - d, n, beamU, beamRandom, 0.1, 0.6));
+                        }
+                    }
+
+                    // Puis les vagues du rayon tenu, derrière le V
+                    float front = min(_WaveStart + localAge * _WaveSpeed, _WaveRange);
                     float calm = times.w > 0.5 ? (_Time.y - times.y) * _WaveSpeed : 0.0;
                     if (d < _WaveStart + calm || d > front)
                         continue;
@@ -243,6 +282,63 @@ Shader "DBZ/Tilemap Effects"
                     best = max(best, CrestShade((ring + 1.0) * _WaveLength - phase, n, d / _WaveRange, random, 0.25, 0.6));
                 }
                 return best;
+            }
+
+            float GroundRandom(float x, float y)
+            {
+                return frac(sin(dot(float2(x, y), float2(12.9898, 78.233))) * 43758.5453);
+            }
+
+            // TERRE : trace brûlée sous les rayons (scorch, qui s'efface par grains après le tir, bords d'abord ; ember = braise).
+            // Rayons seulement ; rien avant le passage du bout
+            void BeamScorch(float2 positionWS, out half scorch, out half ember)
+            {
+                scorch = 0;
+                ember = 0;
+                float2 ground = float2(1.0, 1.0 / _Flatten);
+                float2 pixel = floor(positionWS * 32.0);
+                float2 p = (pixel + 0.5) * ground;
+                for (int i = 0; i < WATER_BEAM_COUNT; i++)
+                {
+                    float4 times = _WaterBeamTimes[i];
+                    float age = _Time.y - times.x;
+                    if (times.z < 0.5 || times.z > 1.5 || age < 0.0)
+                        continue;
+
+                    float2 a = _WaterBeams[i].xy * 32.0 * ground;
+                    float2 ab = _WaterBeams[i].zw * 32.0 * ground - a;
+                    float len = max(length(ab), 0.001);
+                    float2 dir = ab / len;
+                    float along = dot(p - a, dir);
+                    float alongIn = clamp(along, 0.0, len);
+                    float d = length(p - a - dir * alongIn);
+
+                    float speed = _WaterBeamExtras[i].x;
+                    float localAge = age;
+                    if (speed > 0.0)
+                        localAge -= alongIn / len * length(_WaterBeams[i].zw - _WaterBeams[i].xy) / speed;
+                    if (localAge < 0.0)
+                        continue;
+                    float sinceEnd = times.w > 0.5 ? _Time.y - times.y : 0.0;
+
+                    // Trace : bande sous le rayon, de largeur irrégulière
+                    if (along >= 0.0 && along <= len && sinceEnd < _ScorchDuration)
+                    {
+                        float fade = sinceEnd / max(_ScorchDuration, 0.01);
+                        float width = _ScorchWidth * lerp(0.6, 1.0, GroundRandom(floor(along / 3.0), times.x));
+                        if (d < width)
+                        {
+                            float grain = GroundRandom(pixel.x + times.x, pixel.y);
+                            if (grain < saturate((1.0 - fade) * lerp(1.4, 0.9, d / width)))
+                            {
+                                scorch = max(scorch, d < width * 0.5 ? 1.0 : 0.6);
+                                float spark = GroundRandom(pixel.y, pixel.x + 7.0);
+                                if (spark < 0.06 && fade < 0.35 && frac(_Time.y * 3.0 + spark * 17.0) < 0.6)
+                                    ember = 1.0;
+                            }
+                        }
+                    }
+                }
             }
 
             // VENT : vrai si ce point de la planche est du vide autour du feuillage (transparent, ou ombre dessinée dans la tuile)
@@ -284,7 +380,8 @@ Shader "DBZ/Tilemap Effects"
 
                 // VENT : la marque est dans l'alpha de la couleur de la tuile (254 à 247 sur 255), remis à 1
                 half windMark = round((1.0 - input.color.a) * 255.0);
-                if (windMark < 0.5 || windMark > 8.5)
+                // EAU : marque 9 (alpha 246) = tuile d'eau ; sans elle, pas de vagues (fenêtres du même bleu...)
+                if (windMark < 0.5 || windMark > 9.5)
                     windMark = 0.0;
                 else
                     input.color.a = 1.0;
@@ -305,16 +402,26 @@ Shader "DBZ/Tilemap Effects"
                 float worldStepX = ddx(input.waterPos.x);
                 float2 uvPerUnitX = abs(worldStepX) > 0.000001 ? ddx(input.uv) / worldStepX : float2(0.0, 0.0);
                 float2 uv = input.uv;
-                if (input.wind > 0.5)
+                if (input.wind > 0.5 && input.wind < 8.5)
                     uv -= uvPerUnitX * (WindOffset(input.waterPos, input.uv, uvPerUnitX) / 32.0);
                 half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
 
+                half scorch, ember;
+                BeamScorch(input.waterPos, scorch, ember);
+
                 // EAU : seulement les pixels de la couleur exacte de l'eau
                 half3 gap = abs(tex.rgb - _WaterColor.rgb);
-                if (tex.a > 0.5 && max(gap.r, max(gap.g, gap.b)) < 0.02)
+                if (input.wind > 8.5 && tex.a > 0.5 && max(gap.r, max(gap.g, gap.b)) < 0.02)
                 {
                     half crest = WaterCrest(input.waterPos);
                     tex.rgb = crest > 1.5 ? _FoamColor.rgb : lerp(tex.rgb, _CrestColor.rgb, crest);
+                }
+                // TERRE : tout autre pixel de sol prend la trace brûlée des rayons
+                else if (tex.a > 0.5 && _ScorchStrength > 0.0)
+                {
+                    tex.rgb *= lerp(half3(1.0, 1.0, 1.0), _ScorchColor.rgb, _ScorchStrength * scorch);
+                    if (ember > 0.5)
+                        tex.rgb = _EmberColor.rgb;
                 }
 
                 const half4 main = input.color * tex;
@@ -381,6 +488,13 @@ Shader "DBZ/Tilemap Effects"
                 float _WakeRange;
                 float _WakeDuration;
                 float _WakeStart;
+                float _BeamWakeRange;
+                float _BeamWakeDuration;
+                float _ScorchStrength;
+                half4 _ScorchColor;
+                float _ScorchWidth;
+                float _ScorchDuration;
+                half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;
                 float _WindEdge;
@@ -457,6 +571,13 @@ Shader "DBZ/Tilemap Effects"
                 float _WakeRange;
                 float _WakeDuration;
                 float _WakeStart;
+                float _BeamWakeRange;
+                float _BeamWakeDuration;
+                float _ScorchStrength;
+                half4 _ScorchColor;
+                float _ScorchWidth;
+                float _ScorchDuration;
+                half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;
                 float _WindEdge;

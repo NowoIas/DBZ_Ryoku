@@ -22,3 +22,4 @@ MonoBehaviour:
   m_TileColliderType: 0
   m_TileAnimationFlags: 0
   blockCell: {x: 0, y: 2}
+  color: {r: 1, g: 1, b: 1, a: 0.9647059}

@@ -369,7 +369,7 @@ namespace DBZ.Combat
             if (makesWaterRipples && !IsReleased)
             {
                 Vector2 beamStart = CellCenter(0) - direction * 0.5f;
-                WaterRipples.SetBeam(this, beamStart, beamStart + direction * ((float)visibleSegments / segmentsPerCell));
+                WaterRipples.SetBeam(this, beamStart, beamStart + direction * ((float)visibleSegments / segmentsPerCell), cellsPerSecond);
             }
             // Bout avancé dans la case de la cible : arrêté par un objet (pas un mur), pas collé à lui, rayon arrivé jusqu'à lui
             bool reachesTarget = target != null && blockedIndex > 0 && visibleSegments == blockedIndex * segmentsPerCell;

@@ -22,7 +22,7 @@ namespace DBZ.World
         // y = instant de la fin (rayon), ou instant où le projectile était au point de fin
         private static readonly Vector4[] times = new Vector4[MaxBeams];
         // x = distance de départ (px), y = distance maximale (px), z = durée (s), w = nombre d'anneaux
-        // (projectile : y = 0 → réglages du matériau)
+        // (projectile : y = 0 → réglages du matériau ; rayon : x = vitesse d'avancée en cases par seconde)
         private static readonly Vector4[] extras = new Vector4[MaxBeams];
         // Rayon qui tient chaque place tant qu'il tire (null : place libre, ou vagues en train de s'éteindre)
         private static readonly Object[] owners = new Object[MaxBeams];
@@ -43,7 +43,8 @@ namespace DBZ.World
         }
 
         // Appelé à chaque image par un rayon qui tire : son tracé actuel, du départ au bout
-        public static void SetBeam(Object owner, Vector2 start, Vector2 end)
+        // cellsPerSecond : vitesse d'avancée du rayon, pour le sillage en V qui suit son bout (0 = pas de V)
+        public static void SetBeam(Object owner, Vector2 start, Vector2 end, float cellsPerSecond = 0f)
         {
             int slot = SlotOf(owner);
             if (slot < 0)
@@ -53,7 +54,7 @@ namespace DBZ.World
                     return;
                 owners[slot] = owner;
                 times[slot] = new Vector4(Time.time, 0f, 1f, 0f);
-                extras[slot] = Vector4.zero;
+                extras[slot] = new Vector4(cellsPerSecond, 0f, 0f, 0f);
             }
             beams[slot] = new Vector4(start.x, start.y, end.x, end.y);
             Upload();
