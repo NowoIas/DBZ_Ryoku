@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e2cd4c691c952f46b615d0f4daaaf9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
-  speed: 8
+  speed: 10
   maxDistance: 8
   lifetime: 1
   damage: 30
@@ -139,6 +139,7 @@ MonoBehaviour:
   loopFrameCount: 2
   loopCellsPerFrame: 1
   rotateWithDirection: 0
+  framesEightDirections: []
   upOffsetPixels: {x: 0, y: 0}
   downOffsetPixels: {x: 0, y: 0}
   leftOffsetPixels: {x: 0, y: 0}
@@ -155,3 +156,4 @@ MonoBehaviour:
   - {fileID: 697496885, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
   - {fileID: -141845484, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
   - {fileID: -716262048, guid: 01a8cff830ce0464e96f80c54ca6ea16, type: 3}
+  makesWaterRipples: 1
