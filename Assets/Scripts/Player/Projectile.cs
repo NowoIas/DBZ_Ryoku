@@ -70,10 +70,22 @@ public class Projectile : MonoBehaviour
     [Tooltip("Le projectile laisse un sillage en V sur l'eau qu'il survole (WaterRipples, shader des tilemaps)")]
     public bool makesWaterRipples = true;
 
+    // Tête chercheuse (rayon de Freezer), active seulement si HomingTarget est donné au tir :
+    // le projectile ne tourne qu'au centre d'une case, d'un quart de tour vers la cible, jamais en demi-tour,
+    // et peu souvent, pour rester esquivable
+    [Tooltip("Tête chercheuse : cases à parcourir (depuis le tir ou le dernier virage) avant de pouvoir tourner")]
+    [Min(1f)]
+    public float homingTurnEveryCells = 2f;
+    [Tooltip("Tête chercheuse : nombre de virages au plus")]
+    [Min(0)]
+    public int homingMaxTurns = 3;
+
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
     // Tireur (ennemi) : ses colliders sont ignorés (un tir en diagonale part encore dans sa case)
     public Transform Owner { get; set; }
+    // Cible suivie (tête chercheuse) ; vide = tir droit
+    public Transform HomingTarget { get; set; }
 
     private Vector2 direction;
     private Sprite[] frames;
@@ -87,8 +99,11 @@ public class Projectile : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     // Ordre d'affichage réglé dans le prefab = celui du niveau 0 ; décalé selon le niveau du projectile
     private int baseSortingOrder;
-    // Point de départ du trajet, pour le sillage sur l'eau
+    // Point de départ du trajet (ou du dernier virage), pour le sillage sur l'eau
     private Vector2 waterStart;
+    // Distance parcourue au dernier virage (tête chercheuse) : les images repartent de la première après un virage
+    private float segmentStart;
+    private int turnsDone;
 
     public void Launch(Vector2 dir, int launchLevel)
     {
@@ -97,20 +112,7 @@ public class Projectile : MonoBehaviour
         baseSortingOrder = spriteRenderer.sortingOrder;
         SetLevel(launchLevel);
 
-        if (rotateWithDirection) frames = framesRight;
-        else if (dir.y > 0) frames = framesUp;
-        else if (dir.y < 0) frames = framesDown;
-        else if (dir.x < 0) frames = framesLeft;
-        else frames = framesRight;
-        if (framesEightDirections != null && framesEightDirections.Length == 8)
-        {
-            // Bas = 0, puis 45° de plus à chaque image dans le sens inverse des aiguilles d'une montre
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            int index = Mathf.RoundToInt((angle + 90f) / 45f);
-            frames = new[] { framesEightDirections[((index % 8) + 8) % 8] };
-        }
-        if (rotateWithDirection)
-            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+        ChooseFrames(dir);
         Vector2Int offset = dir.y > 0 ? upOffsetPixels : dir.y < 0 ? downOffsetPixels : dir.x < 0 ? leftOffsetPixels : rightOffsetPixels;
         transform.position += new Vector3(offset.x, offset.y, 0f) / 32f;
         waterStart = transform.position;
@@ -143,13 +145,101 @@ public class Projectile : MonoBehaviour
             Hit(contact, contact.ClosestPoint(transform.position));
     }
 
+    // Images (et rotation) selon la direction du tir
+    private void ChooseFrames(Vector2 dir)
+    {
+        if (rotateWithDirection) frames = framesRight;
+        else if (dir.y > 0) frames = framesUp;
+        else if (dir.y < 0) frames = framesDown;
+        else if (dir.x < 0) frames = framesLeft;
+        else frames = framesRight;
+        if (framesEightDirections != null && framesEightDirections.Length == 8)
+        {
+            // Bas = 0, puis 45° de plus à chaque image dans le sens inverse des aiguilles d'une montre
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            int index = Mathf.RoundToInt((angle + 90f) / 45f);
+            frames = new[] { framesEightDirections[((index % 8) + 8) % 8] };
+        }
+        if (rotateWithDirection)
+            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+    }
+
     private void Update()
     {
         if (hasHit)
             return;
 
-        // On teste tout le trajet de l'image, sinon un projectile rapide pourrait traverser un mur fin
-        float distance = speed * Time.deltaTime;
+        float remaining = speed * Time.deltaTime;
+        // Tête chercheuse : le trajet de l'image est coupé au centre de chaque case, seul endroit où il peut tourner
+        while (remaining > 0f)
+        {
+            float step = remaining;
+            bool atCenter = false;
+            if (IsHoming)
+            {
+                float toCenter = DistanceToNextCellCenter();
+                if (toCenter <= step)
+                {
+                    step = toCenter;
+                    atCenter = true;
+                }
+            }
+            if (!Advance(step))
+                return;
+            remaining -= step;
+            if (atCenter)
+                TryTurnTowardTarget();
+        }
+        UpdateFrame();
+    }
+
+    // Tir droit (pas en diagonale) avec une cible et des virages restants
+    private bool IsHoming => HomingTarget != null && turnsDone < homingMaxTurns && (direction.x == 0f || direction.y == 0f);
+
+    // Distance jusqu'au prochain centre de case devant (toujours > 0 : posé sur un centre, il vise le suivant)
+    private float DistanceToNextCellCenter()
+    {
+        float along = direction.x != 0f ? transform.position.x * direction.x : transform.position.y * direction.y;
+        float nextCenter = Mathf.Floor(along - 0.5f + 0.001f) + 1.5f;
+        return nextCenter - along;
+    }
+
+    // Au centre d'une case : quart de tour vers la cible si elle est plus loin sur le côté que devant
+    // (cible derrière mais décalée : il tourne aussi ; pile derrière : il continue, jamais de demi-tour)
+    private void TryTurnTowardTarget()
+    {
+        // Recalé exactement sur le centre (les petites erreurs de calcul s'additionneraient)
+        Vector3 p = transform.position;
+        if (direction.x != 0f) p.x = Mathf.Floor(p.x) + 0.5f;
+        else p.y = Mathf.Floor(p.y) + 0.5f;
+        transform.position = p;
+
+        if (traveled - segmentStart < homingTurnEveryCells - 0.01f)
+            return;
+        Vector2 target = CellCenter(CellOf(HomingTarget.position));
+        Vector2 delta = target - (Vector2)p;
+        Vector2 side = new Vector2(-direction.y, direction.x);
+        float forward = Vector2.Dot(delta, direction);
+        float lateral = Vector2.Dot(delta, side);
+        if (Mathf.Abs(lateral) < 0.5f || Mathf.Abs(lateral) <= forward)
+            return;
+
+        direction = side * Mathf.Sign(lateral);
+        turnsDone++;
+        segmentStart = traveled;
+        ChooseFrames(direction);
+        // Le sillage sur l'eau repart du virage
+        if (makesWaterRipples)
+        {
+            WaterRipples.EndProjectile(this);
+            waterStart = p;
+        }
+    }
+
+    // Avance de cette distance (murs, cibles, portée) ; faux si le projectile a disparu
+    private bool Advance(float distance)
+    {
+        // On teste tout le trajet, sinon un projectile rapide pourrait traverser un mur fin
 
         // Bout de la portée : il disparaît sans impact
         bool lastStep = false;
@@ -166,7 +256,7 @@ public class Projectile : MonoBehaviour
             // Case pleine (ou montagne) : impact dedans, comme sur un obstacle ; mur ou sens unique : avant le côté bloqué
             Vector2Int next = cell + Vector2Int.RoundToInt(direction);
             HitWall(CollisionMap.IsTechniqueSolidCell(CellCenter(next), level) ? next : cell);
-            return;
+            return false;
         }
 
         // Premier objet touché à son niveau de hauteur (un tir sur le pont passe au-dessus de ce qui est dessous)
@@ -176,7 +266,7 @@ public class Projectile : MonoBehaviour
                 continue;
             transform.position = hit.centroid;
             Hit(hit.collider, hit.point);
-            return;
+            return false;
         }
 
         transform.position += (Vector3)(direction * distance);
@@ -186,9 +276,9 @@ public class Projectile : MonoBehaviour
         if (lastStep)
         {
             Destroy(gameObject);
-            return;
+            return false;
         }
-        UpdateFrame();
+        return true;
     }
 
     // Projectile disparu (impact, bout de portée, changement de scène) : son sillage finit de s'écarter
@@ -202,12 +292,14 @@ public class Projectile : MonoBehaviour
     {
         if (frames == null || frames.Length == 0)
             return;
-        int index = (int)(traveled / cellsPerFrame);
+        // Depuis le tir, ou depuis le dernier virage (tête chercheuse : le rayon repart court)
+        float distance = traveled - segmentStart;
+        int index = (int)(distance / cellsPerFrame);
         int firstLoopFrame = frames.Length - Mathf.Min(loopFrameCount, frames.Length);
         if (loopFrameCount > 0 && index >= firstLoopFrame)
         {
             float loopStart = firstLoopFrame * cellsPerFrame;
-            index = firstLoopFrame + (int)((traveled - loopStart) / loopCellsPerFrame) % (frames.Length - firstLoopFrame);
+            index = firstLoopFrame + (int)((distance - loopStart) / loopCellsPerFrame) % (frames.Length - firstLoopFrame);
         }
         else
         {

@@ -95,6 +95,7 @@ GameObject:
   - component: {fileID: 5629814108043289454}
   - component: {fileID: 8578179907879571348}
   - component: {fileID: 6548056279039894406}
+  - component: {fileID: 4055360479988308953}
   m_Layer: 0
   m_Name: Freezer
   m_TagString: Untagged
@@ -213,6 +214,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.Health
   maxHealth: 50
+  startHealthRatio: 1
+  isAlly: 0
 --- !u!114 &4870545573480909169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -225,13 +228,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 533489fc63a4a67488a80254174c948e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Enemies.EnemyController
+  combatStyle: 1
+  preferredRange: {x: 3, y: 5}
+  maxFiringSpotsTried: 3
   moveSpeed: 3
   detectionRange: 5
   giveUpRange: 10
+  wanderRadius: 3
+  wanderSpeed: 2
+  wanderPause: {x: 1, y: 3}
+  wanderSteps: {x: 1, y: 3}
+  searchRadius: 15
+  maxSearchNodes: 1500
+  repathInterval: 0.5
+  avoidDuration: 2
   meleeDamage: 5
   meleeHitTime: 0.5
   attackCooldown: 0.6
-  projectilePrefab: {fileID: 8846146653489414916, guid: 3a7b6bccc0f1f514f8ded70bbffe91fc, type: 3}
+  projectilePrefab: {fileID: 8846146653489414916, guid: e08b987759d957f42a8101b85d6a15ab, type: 3}
   rangedRange: 5
   rangedCooldown: 2
   rangedHitTime: 0.5
@@ -255,6 +269,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.DamagePopupSpawner
   popupPrefab: {fileID: 5897258830044289627, guid: fa6c98af3929f4240ab7c415303680e1, type: 3}
+  showDamage: 1
+  showHeal: 1
   offset: {x: 0, y: 0.5}
   horizontalJitter: 4
 --- !u!114 &5629814108043289454
@@ -298,3 +314,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.World.HeightLevel
   level: 0
+--- !u!114 &4055360479988308953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8914585763547315146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 394ff89ede9929346a22fb6610e15e46, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Enemies.HomingBeam
+  cooldown: 8
+  range: 5
+  firstDelay: 2
+  projectilePrefab: {fileID: 8846146653489414916, guid: f27181d7ed996c5448c8f39012c6e169, type: 3}
+  fireTime: 0.5
+  spawnOffset: 0.75
