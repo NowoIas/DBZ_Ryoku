@@ -97,6 +97,7 @@ GameObject:
   - component: {fileID: 5482455977192904936}
   - component: {fileID: 5978653041979736278}
   - component: {fileID: 6625029623467690947}
+  - component: {fileID: 602117220028679980}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -386,3 +387,49 @@ MonoBehaviour:
   fadeOutDuration: 0.15
   sortingLayerName: foreground
   sortingOrder: 51
+--- !u!114 &602117220028679980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8383698867614165709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c2e8c0058cbb6d48a7cda178cb22b5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Player.TransformationRocks
+  stages:
+  - count: 3
+    minRadiusPixels: 16
+    maxRadiusPixels: 22
+  - count: 5
+    minRadiusPixels: 16
+    maxRadiusPixels: 22
+  - count: 6
+    minRadiusPixels: 18
+    maxRadiusPixels: 26
+  - count: 8
+    minRadiusPixels: 18
+    maxRadiusPixels: 26
+  rockFrames:
+  - {fileID: 828214680, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: 444347564, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: 618836708, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: -829803880, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  shardFrames:
+  - {fileID: 207493655, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: -1491935024, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: -183229598, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  - {fileID: -621671010, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+  ringCenterBelowPixels: 16
+  flatten: 0.7
+  angleJitterDegrees: 14
+  frontThresholdPixels: 8
+  startSpread: 0.35
+  liftDuration: 0.08
+  floatFrameDuration: 0.18
+  endSpread: 0.15
+  landDuration: 0.1
+  shardFramesPerSecond: 12
+  maxFloatTime: 6

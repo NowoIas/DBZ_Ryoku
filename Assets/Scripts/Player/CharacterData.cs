@@ -34,6 +34,20 @@ namespace DBZ.Player
                 && transformAtDetransformSpeedPerStage[index];
         }
 
+        [Tooltip("Paliers (1 = premier) atteints sans cailloux autour du perso (TransformationRocks) : "
+            + "pas une vraie transformation (Piccolo : 1 = Noweight ; Gohan ado : 2 = Sayaman)")]
+        public int[] stagesWithoutRocks = new int[0];
+
+        // Vrai si la transformation vers ce palier fait se soulever des cailloux
+        public bool HasTransformationRocks(int stage)
+        {
+            if (stagesWithoutRocks != null)
+                foreach (int s in stagesWithoutRocks)
+                    if (s == stage)
+                        return false;
+            return true;
+        }
+
         [Tooltip("Image affichée avant la première animation (attente, de face)")]
         public Sprite startSprite;
 

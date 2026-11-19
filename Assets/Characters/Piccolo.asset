@@ -18,6 +18,7 @@ MonoBehaviour:
   - {fileID: 22100000, guid: 3abc43ae07c8b1240a409623f023377f, type: 2}
   transformAtDetransformSpeed: 1
   transformAtDetransformSpeedPerStage: 
+  stagesWithoutRocks: 01000000i
   startSprite: {fileID: -1118479930, guid: fcb54ad224b8fb847b92878e4d95e912, type: 3}
   beamPrefab: {fileID: 0}
   transformedBeamPrefabs: []
@@ -29,6 +30,7 @@ MonoBehaviour:
   beamHealthPerSecond: 5
   transformHealthCost: 10
   spinOnE: 1
+  spinHitsDiagonals: 0
   spinHealthCost: 5
   spinKiCost: 5
   spinHealRatio: 0.5
@@ -49,7 +51,40 @@ MonoBehaviour:
   swordOnE: 0
   swordDamage: 20
   swordCooldown: 0
+  swordInFrontDirections: 13
+  bleedDuration: 0
+  bleedDamage: 3
+  bleedInterval: 0.5
+  bleedIcon: {fileID: 0}
+  bleedIconFrames: []
   noTechniqueOnE: 0
   specialProjectilePrefab: {fileID: 0}
   specialKiCost: 15
   specialCooldown: 0.5
+  dragonFistPrefab: {fileID: 0}
+  fusionCharacter: {fileID: 0}
+  fusionKiCost: 50
+  fusionDuration: 180
+  separationClip: {fileID: 0}
+  stunPunchOnR: 0
+  stunPunchDamage: 15
+  stunDuration: 2
+  stunIcon: {fileID: 0}
+  stunPunchKiCost: 10
+  stunPunchCooldown: 1
+  stunPunchHitTime: 0.25
+  projectileOnE: {fileID: 0}
+  projectileOnEKiCost: 15
+  projectileOnECooldown: 1
+  ghostController: {fileID: 0}
+  transformedGhostControllers: []
+  ghostKiCost: 20
+  passiveIcon: {fileID: 0}
+  kiBlastIcon: {fileID: 0}
+  transformIcon: {fileID: 0}
+  transformedTransformIcons: []
+  fusionIcon: {fileID: 0}
+  beamIcon: {fileID: 0}
+  chargedIcon: {fileID: 0}
+  extraIcon: {fileID: 0}
+  flyIcon: {fileID: 0}

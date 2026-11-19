@@ -237,6 +237,8 @@ public class PlayerController : MonoBehaviour
     private Health health;
     // Niveau de hauteur vu par les autres (ennemis, techniques ennemies) : tenu à jour par SetLevel
     private HeightLevel heightLevel;
+    // Cailloux soulevés pendant la transformation (absent = pas de cailloux)
+    private TransformationRocks transformationRocks;
     // Actions définies dans Assets/Settings/InputSystem_Actions.inputactions (touches remappables)
     private InputSystem_Actions controls;
 
@@ -252,6 +254,7 @@ public class PlayerController : MonoBehaviour
         ApplyCharacter();
         health = GetComponent<Health>();
         heightLevel = GetComponent<HeightLevel>();
+        transformationRocks = GetComponent<TransformationRocks>();
         groundSortingLayer = spriteRenderer.sortingLayerName;
         controls = new InputSystem_Actions();
 
@@ -1199,8 +1202,13 @@ public class PlayerController : MonoBehaviour
             ? DetransformClipFramesPerSecond * detransformSpeed
             : transformFramesPerSecond;
         animator.SetFloat(TransformSpeed, framesPerSecond / TransformClipFramesPerSecond);
+        // Cailloux autour du perso, d'autant plus nombreux que le palier est élevé (pas pour Noweight, Sayaman)
+        if (transformationRocks != null && (character == null || character.HasTransformationRocks(ki.Level)))
+            transformationRocks.Begin(ki.Level, level);
         // L'état Transform est taggé "Attack" : on réutilise la même logique d'attente
         yield return Attack("transform");
+        if (transformationRocks != null)
+            transformationRocks.End();
 
         // On remplace les animations par celles de la nouvelle forme
         SwitchController(nextController);
@@ -1495,6 +1503,9 @@ public class PlayerController : MonoBehaviour
         isDead = true;
         // Coupe les attaques, la transformation et le Kamehameha en cours
         StopAllCoroutines();
+        // Transformation coupée : les cailloux retombent tout de suite
+        if (transformationRocks != null)
+            transformationRocks.End();
         HideSpinBlade();
         isSwordInFront = false;
         // La mort sépare la fusion : on revient avec le personnage d'origine (Goten), dans la scène de réapparition
