@@ -31,6 +31,22 @@ namespace DBZ.Player
             new StageRocks { count = 8, minRadiusPixels = 18, maxRadiusPixels = 26 },
         };
 
+        public enum Mode
+        {
+            // Cailloux qui se soulèvent, flottent, puis retombent en éclats à la fin (1re version)
+            FloatingRocks,
+            // Rien pendant la transformation, une gerbe d'éclats à la fin (option A)
+            ShardsAtEnd,
+            // Petites gerbes d'éclats à tour de rôle pendant toute la transformation, à une place nouvelle à chaque fois
+            ShardsDuring,
+        }
+
+        [Tooltip("Floating Rocks : cailloux qui flottent puis retombent ; Shards At End : éclats à la fin seulement ; "
+            + "Shards During : gerbes d'éclats en continu pendant la transformation (Count = gerbes à la fois)")]
+        [SerializeField] private Mode mode = Mode.ShardsDuring;
+        [Tooltip("Shards During : pause entre deux gerbes d'une même place, tirée entre ces 2 valeurs (s)")]
+        [SerializeField] private Vector2 burstPause = new Vector2(0.05f, 0.3f);
+
         [Tooltip("Caillou : 0 au sol, 1 et 2 en l'air (flottement), 3 retombé")]
         [SerializeField] private Sprite[] rockFrames = new Sprite[4];
         [Tooltip("Éclats joués quand le caillou retombe")]
@@ -72,6 +88,17 @@ namespace DBZ.Player
             public float startTime;
             public float endTime = -1f;
             public float phase;
+            public Mode mode;
+            // Lancement (sécurité maxFloatTime)
+            public float beginTime;
+            // Shards During : secteur de l'anneau de cette place, pour tirer une nouvelle position à chaque gerbe
+            public float sectorAngle;
+            public float minRadius;
+            public float maxRadius;
+            public Vector3 ringCenter;
+            public int level;
+            public int playerOrder;
+            public bool placed;
         }
 
         private readonly List<Rock> rocks = new List<Rock>();
@@ -110,6 +137,21 @@ namespace DBZ.Player
 
             for (int i = 0; i < settings.count; i++)
             {
+                if (mode == Mode.ShardsDuring)
+                {
+                    // Place réservée sur un secteur de l'anneau ; position tirée à chaque gerbe
+                    Rock slot = CreateRock(ringCenter, layer, order + 1, order - 2);
+                    slot.sectorAngle = baseAngle + i * Mathf.PI * 2f / settings.count;
+                    slot.minRadius = settings.minRadiusPixels;
+                    slot.maxRadius = settings.maxRadiusPixels;
+                    slot.ringCenter = ringCenter;
+                    slot.level = level;
+                    slot.playerOrder = order;
+                    slot.startTime = Time.time + Random.Range(0f, startSpread);
+                    rocks.Add(slot);
+                    continue;
+                }
+
                 float angle = baseAngle + i * Mathf.PI * 2f / settings.count
                     + Random.Range(-angleJitterDegrees, angleJitterDegrees) * Mathf.Deg2Rad;
                 float distance = Random.Range(settings.minRadiusPixels, settings.maxRadiusPixels);
@@ -127,12 +169,13 @@ namespace DBZ.Player
             }
         }
 
-        // Fin de la transformation : chaque caillou retombe en éclats (avec un léger décalage) puis disparaît
+        // Fin de la transformation : chaque caillou retombe en éclats (avec un léger décalage) puis disparaît ;
+        // Shards During : plus de nouvelle gerbe, celles en cours se finissent
         public void End()
         {
             foreach (var rock in rocks)
                 if (rock.endTime < 0f)
-                    rock.endTime = Time.time + Random.Range(0f, endSpread);
+                    rock.endTime = rock.mode == Mode.ShardsDuring ? Time.time : Time.time + Random.Range(0f, endSpread);
         }
 
         private Rock CreateRock(Vector3 position, string layer, int bodyOrder, int shadowOrder)
@@ -144,10 +187,27 @@ namespace DBZ.Player
                 root = root,
                 body = CreateRenderer(root, "Body", layer, bodyOrder),
                 shadow = CreateRenderer(root, "Shadow", layer, shadowOrder),
-                startTime = Time.time + Random.Range(0f, startSpread),
+                startTime = mode == Mode.ShardsAtEnd ? Time.time : Time.time + Random.Range(0f, startSpread),
+                beginTime = Time.time,
                 phase = Random.value,
+                mode = mode,
             };
             return rock;
+        }
+
+        // Shards During : nouvelle position au hasard dans le secteur de la place ; faux si elle tombe sur l'eau / un obstacle
+        private bool PlaceInSector(Rock rock)
+        {
+            float angle = rock.sectorAngle + Random.Range(-angleJitterDegrees, angleJitterDegrees) * Mathf.Deg2Rad;
+            float distance = Random.Range(rock.minRadius, rock.maxRadius);
+            float dx = Mathf.Round(Mathf.Cos(angle) * distance);
+            float dy = Mathf.Round(Mathf.Sin(angle) * distance * flatten);
+            Vector3 position = rock.ringCenter + new Vector3(dx, dy, 0f) / PixelsPerUnit;
+            if (CollisionMap.BlocksLanding(position, rock.level))
+                return false;
+            rock.root.position = position;
+            rock.body.sortingOrder = dy < frontThresholdPixels ? rock.playerOrder + 1 : rock.playerOrder - 1;
+            return true;
         }
 
         private static SpriteRenderer CreateRenderer(Transform parent, string name, string layer, int order)
@@ -181,8 +241,55 @@ namespace DBZ.Player
         {
             finished = false;
             float now = Time.time;
-            if (rock.endTime < 0f && now - rock.startTime > maxFloatTime)
+            if (rock.endTime < 0f && now - rock.beginTime > maxFloatTime)
                 rock.endTime = now;
+
+            if (rock.mode == Mode.ShardsDuring)
+            {
+                if (now < rock.startTime)
+                {
+                    // Fin annoncée pendant la pause : plus de nouvelle gerbe
+                    if (rock.endTime >= 0f)
+                        finished = true;
+                    return null;
+                }
+                if (!rock.placed)
+                {
+                    rock.placed = true;
+                    if (!PlaceInSector(rock))
+                    {
+                        // Place sur l'eau / un obstacle : on retentera à la gerbe suivante
+                        rock.placed = false;
+                        rock.startTime = now + Random.Range(burstPause.x, burstPause.y);
+                        return null;
+                    }
+                }
+                int frame = Mathf.FloorToInt((now - rock.startTime) * shardFramesPerSecond);
+                if (shardFrames != null && frame < shardFrames.Length)
+                    return shardFrames[frame];
+                // Gerbe finie : la suivante ailleurs dans le secteur, sauf si la transformation est finie
+                if (rock.endTime >= 0f)
+                {
+                    finished = true;
+                    return null;
+                }
+                rock.placed = false;
+                rock.startTime = now + Random.Range(burstPause.x, burstPause.y);
+                return null;
+            }
+
+            if (rock.mode == Mode.ShardsAtEnd)
+            {
+                if (rock.endTime < 0f || now < rock.endTime)
+                    return null;
+                int burst = Mathf.FloorToInt((now - rock.endTime) * shardFramesPerSecond);
+                if (shardFrames == null || burst >= shardFrames.Length)
+                {
+                    finished = true;
+                    return null;
+                }
+                return shardFrames[burst];
+            }
 
             if (rock.endTime >= 0f && now >= rock.endTime)
             {
