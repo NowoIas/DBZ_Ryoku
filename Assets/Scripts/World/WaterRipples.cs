@@ -18,7 +18,7 @@ namespace DBZ.World
 
         // xy = début, zw = fin du rayon (monde, en cases)
         private static readonly Vector4[] beams = new Vector4[MaxBeams];
-        // x = instant du départ, z = 0 place libre / 1 rayon / 2 projectile / 3 explosion, w = 1 si fini ;
+        // x = instant du départ, z = 0 place libre / 1 rayon / 2 projectile / 3 explosion / 4 tache brûlée, w = 1 si fini ;
         // y = instant de la fin (rayon), ou instant où le projectile était au point de fin
         private static readonly Vector4[] times = new Vector4[MaxBeams];
         // x = distance de départ (px), y = distance maximale (px), z = durée (s), w = nombre d'anneaux
@@ -115,6 +115,21 @@ namespace DBZ.World
             // Déjà « finie » : la place peut être reprise par un tir suivant, les plus anciennes d'abord
             times[slot] = new Vector4(Time.time, Time.time, 3f, 1f);
             extras[slot] = new Vector4(startPixels, maxPixels, duration, ringCount);
+            Upload();
+        }
+
+        // Explosion sur la terre : tache brûlée ronde de radiusPixels autour du centre, qui s'efface en duration secondes
+        // (dessinée par le shader sur le sol hors eau ; occupe une place comme une onde)
+        public static void AddScorch(Vector2 center, float radiusPixels, float duration)
+        {
+            int slot = FreeSlot();
+            if (slot < 0)
+                return;
+            owners[slot] = null;
+            beams[slot] = new Vector4(center.x, center.y, center.x, center.y);
+            // Déjà « finie » : la place peut être reprise par un tir suivant, les plus anciennes d'abord
+            times[slot] = new Vector4(Time.time, Time.time, 4f, 1f);
+            extras[slot] = new Vector4(radiusPixels, 0f, duration, 0f);
             Upload();
         }
 

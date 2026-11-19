@@ -39,6 +39,9 @@ public class Projectile : MonoBehaviour
     // Images dessinées vers la droite (Frames Right), tournées selon la direction du tir (Volleyball de Gotenks) ;
     // décochée : une liste d'images par direction
     public bool rotateWithDirection = false;
+    [Tooltip("Une image par direction, 8 directions (remplace les listes ci-dessus si remplie), dans l'ordre : bas, bas-droite, " +
+             "droite, haut-droite, haut, haut-gauche, gauche, bas-gauche (boules de la toupie de Raditz)")]
+    public Sprite[] framesEightDirections;
     // Décalage du projectile à son départ, en pixels (x vers la droite, y vers le haut), selon la direction du tir
     public Vector2Int upOffsetPixels;
     public Vector2Int downOffsetPixels;
@@ -69,6 +72,8 @@ public class Projectile : MonoBehaviour
 
     // Tiré par le joueur (et non par un ennemi) : ses dégâts comptent comme un combat (vol interdit un moment)
     public bool FiredByPlayer { get; set; }
+    // Tireur (ennemi) : ses colliders sont ignorés (un tir en diagonale part encore dans sa case)
+    public Transform Owner { get; set; }
 
     private Vector2 direction;
     private Sprite[] frames;
@@ -97,6 +102,13 @@ public class Projectile : MonoBehaviour
         else if (dir.y < 0) frames = framesDown;
         else if (dir.x < 0) frames = framesLeft;
         else frames = framesRight;
+        if (framesEightDirections != null && framesEightDirections.Length == 8)
+        {
+            // Bas = 0, puis 45° de plus à chaque image dans le sens inverse des aiguilles d'une montre
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            int index = Mathf.RoundToInt((angle + 90f) / 45f);
+            frames = new[] { framesEightDirections[((index % 8) + 8) % 8] };
+        }
         if (rotateWithDirection)
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         Vector2Int offset = dir.y > 0 ? upOffsetPixels : dir.y < 0 ? downOffsetPixels : dir.x < 0 ? leftOffsetPixels : rightOffsetPixels;
@@ -118,7 +130,15 @@ public class Projectile : MonoBehaviour
         }
 
         // Tiré à bout portant contre une cible ou un Destructible (à son niveau) : il touche tout de suite
-        Collider2D contact = HeightLevel.FirstOnLevel(Physics2D.OverlapCircleAll(transform.position, hitRadius, hitLayers), level);
+        Collider2D contact = null;
+        foreach (Collider2D c in Physics2D.OverlapCircleAll(transform.position, hitRadius, hitLayers))
+        {
+            if (!IsOwner(c) && HeightLevel.IsOnLevel(c, level))
+            {
+                contact = c;
+                break;
+            }
+        }
         if (contact != null)
             Hit(contact, contact.ClosestPoint(transform.position));
     }
@@ -152,7 +172,7 @@ public class Projectile : MonoBehaviour
         // Premier objet touché à son niveau de hauteur (un tir sur le pont passe au-dessus de ce qui est dessous)
         foreach (RaycastHit2D hit in Physics2D.CircleCastAll(transform.position, hitRadius, direction, distance, hitLayers))
         {
-            if (!HeightLevel.IsOnLevel(hit.collider, level))
+            if (IsOwner(hit.collider) || !HeightLevel.IsOnLevel(hit.collider, level))
                 continue;
             transform.position = hit.centroid;
             Hit(hit.collider, hit.point);
@@ -229,18 +249,41 @@ public class Projectile : MonoBehaviour
 
     // Avance case par case jusqu'à celle de l'avant du projectile ; vrai si un côté franchi est bloqué
     // (cell reste alors sur la dernière case libre)
+    // En diagonale, le pas passe si l'un des deux chemins en « L » (côté puis haut / bas, ou l'inverse) est libre
     private bool IsBlockedBefore(Vector2 leadingEdge)
     {
         Vector2Int target = CellOf(leadingEdge);
-        Vector2Int step = Vector2Int.RoundToInt(direction);
         while (cell != target)
         {
-            if (!CollisionMap.CanTechniquePass(CellCenter(cell), direction, level))
+            Vector2Int step = new Vector2Int(System.Math.Sign(target.x - cell.x), System.Math.Sign(target.y - cell.y));
+            if (step.x != 0 && step.y != 0)
+            {
+                if (!CanPassDiagonal(cell, step))
+                    return true;
+            }
+            else if (!CollisionMap.CanTechniquePass(CellCenter(cell), step, level))
+            {
                 return true;
+            }
             cell += step;
             SetLevel(LevelMap.LevelAfterEntering(CellCenter(cell), level));
         }
         return false;
+    }
+
+    private bool CanPassDiagonal(Vector2Int from, Vector2Int step)
+    {
+        Vector2 x = new Vector2(step.x, 0f);
+        Vector2 y = new Vector2(0f, step.y);
+        Vector2 start = CellCenter(from);
+        bool xThenY = CollisionMap.CanTechniquePass(start, x, level) && CollisionMap.CanTechniquePass(start + x, y, level);
+        bool yThenX = CollisionMap.CanTechniquePass(start, y, level) && CollisionMap.CanTechniquePass(start + y, x, level);
+        return xThenY || yThenX;
+    }
+
+    private bool IsOwner(Collider2D c)
+    {
+        return Owner != null && c.transform.IsChildOf(Owner);
     }
 
     // Arrêté par un calque de collision (case pleine, mur, sens unique) : pas de dégâts, impact au centre de la case

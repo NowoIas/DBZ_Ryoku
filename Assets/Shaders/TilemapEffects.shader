@@ -185,7 +185,8 @@ Shader "DBZ/Tilemap Effects"
                 {
                     float4 times = _WaterBeamTimes[i];
                     float age = _Time.y - times.x;
-                    if (times.z < 0.5 || age < 0.0)
+                    // Tache brûlée (4) : rien sur l'eau
+                    if (times.z < 0.5 || times.z > 3.5 || age < 0.0)
                         continue;
 
                     float2 a = _WaterBeams[i].xy * 32.0 * ground;
@@ -290,7 +291,7 @@ Shader "DBZ/Tilemap Effects"
             }
 
             // TERRE : trace brûlée sous les rayons (scorch, qui s'efface par grains après le tir, bords d'abord ; ember = braise).
-            // Rayons seulement ; rien avant le passage du bout
+            // Rayons : rien avant le passage du bout. Explosions (place de type 4, WaterRipples.AddScorch) : tache ronde
             void BeamScorch(float2 positionWS, out half scorch, out half ember)
             {
                 scorch = 0;
@@ -302,7 +303,40 @@ Shader "DBZ/Tilemap Effects"
                 {
                     float4 times = _WaterBeamTimes[i];
                     float age = _Time.y - times.x;
-                    if (times.z < 0.5 || times.z > 1.5 || age < 0.0)
+                    if (age < 0.0)
+                        continue;
+
+                    // Tache brûlée d'une explosion : ronde au sol (ellipse à l'écran), bord irrégulier,
+                    // s'efface par grains (bords d'abord) en extras.z secondes ; extras.x = rayon en pixels
+                    if (times.z > 3.5)
+                    {
+                        float4 spot = _WaterBeamExtras[i];
+                        float spotFade = age / max(spot.z, 0.01);
+                        if (spotFade >= 1.0)
+                            continue;
+                        float2 fromCenter = p - _WaterBeams[i].xy * 32.0 * ground;
+                        float r = length(fromCenter);
+                        // Bord : un tirage tous les ~6 px de tour, raccordés en douceur (pas de pointes)
+                        float segments = max(6.0, floor(6.2832 * spot.x / 6.0));
+                        float t = (atan2(fromCenter.y, fromCenter.x) + 3.1416) / 6.2832 * segments;
+                        float k = floor(t);
+                        float edgeRandom = lerp(GroundRandom(fmod(k, segments), times.x), GroundRandom(fmod(k + 1.0, segments), times.x), frac(t));
+                        float edge = spot.x * lerp(0.7, 1.0, edgeRandom);
+                        if (r < edge)
+                        {
+                            float spotGrain = GroundRandom(pixel.x + times.x, pixel.y);
+                            if (spotGrain < saturate((1.0 - spotFade) * lerp(1.4, 0.9, r / edge)))
+                            {
+                                scorch = max(scorch, r < edge * 0.5 ? 1.0 : 0.6);
+                                float spotSpark = GroundRandom(pixel.y, pixel.x + 7.0);
+                                if (spotSpark < 0.06 && spotFade < 0.35 && frac(_Time.y * 3.0 + spotSpark * 17.0) < 0.6)
+                                    ember = 1.0;
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (times.z < 0.5 || times.z > 1.5)
                         continue;
 
                     float2 a = _WaterBeams[i].xy * 32.0 * ground;

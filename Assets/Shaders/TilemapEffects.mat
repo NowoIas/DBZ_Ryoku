@@ -44,18 +44,8 @@ Material:
     - _BeamVSpeed: 8
     - _BeamWakeDuration: 0.8
     - _BeamWakeRange: 40
-    - _DustDash: 3
-    - _DustDensity: 0.35
-    - _DustRange: 24
-    - _DustSpacing: 8
-    - _DustSpeed: 40
-    - _DustStrength: 0
-    - _DustWakeDuration: 0.5
     - _EnableExternalAlpha: 0
     - _Flatten: 0.7
-    - _GlowRange: 20
-    - _GlowSteps: 3
-    - _GlowStrength: 0.35
     - _RingSpacing: 10
     - _ScorchDuration: 2
     - _ScorchStrength: 0.8
@@ -82,10 +72,8 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _CrestColor: {r: 0.56499994, g: 0.784, b: 0.973, a: 1}
-    - _DustColor: {r: 0.93, g: 0.89, b: 0.78, a: 1}
     - _EmberColor: {r: 1, g: 0.6, b: 0.19999996, a: 1}
     - _FoamColor: {r: 0.816, g: 0.91, b: 0.973, a: 1}
-    - _GlowColor: {r: 0.6, g: 0.85, b: 1, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
     - _ScorchColor: {r: 0.34999996, g: 0.27999997, b: 0.21999997, a: 1}
     - _WaterColor: {r: 0.34499997, g: 0.6589999, b: 0.973, a: 1}

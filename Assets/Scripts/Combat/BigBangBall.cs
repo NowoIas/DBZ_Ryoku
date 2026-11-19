@@ -60,6 +60,16 @@ namespace DBZ.Combat
         [SerializeField] private float ringMaxPixels = 80f;
         [SerializeField] private float ringDuration = 1.2f;
 
+        [Header("Terre (WaterRipples, shader des tilemaps)")]
+        [Tooltip("L'explosion laisse une tache brûlée ronde sur le sol (pas sur l'eau ; rien si la boule s'éteint au bout de sa portée)")]
+        [SerializeField] private bool scorchesGround = true;
+        [Tooltip("Rayon de la tache, en pixels (grosse boule ; petite : la moitié)")]
+        [Min(1f)]
+        [SerializeField] private float scorchRadiusPixels = 40f;
+        [Tooltip("Durée avant que la tache soit effacée, en secondes")]
+        [Min(0.1f)]
+        [SerializeField] private float scorchDuration = 3f;
+
         [Header("Affichage")]
         [SerializeField] private string sortingLayerName = "player";
         // Rang des techniques dans la tranche du niveau (LevelMap.SortingOrdersPerLevel)
@@ -248,6 +258,8 @@ namespace DBZ.Combat
                 WaterRipples.AddRing(RowCenter(index), isFull ? wakeStartPixelsFull : wakeStartPixelsSmall,
                     isFull ? ringMaxPixels : ringMaxPixels * 0.7f, ringDuration, 2);
             }
+            if (scorchesGround)
+                WaterRipples.AddScorch(RowCenter(index), activeHalfWidth > 0 ? scorchRadiusPixels : scorchRadiusPixels * 0.5f, scorchDuration);
             Destroy(gameObject);
         }
 

@@ -84,6 +84,16 @@ namespace DBZ.Combat
         [Min(1)]
         [SerializeField] private int ringCount = 3;
 
+        [Header("Terre (WaterRipples, shader des tilemaps)")]
+        [Tooltip("L'explosion laisse une tache brûlée ronde sur le sol (pas sur l'eau)")]
+        [SerializeField] private bool scorchesGround = true;
+        [Tooltip("Rayon de la tache, en pixels (32 par case ; 48 = bord de la zone 3×3)")]
+        [Min(1f)]
+        [SerializeField] private float scorchRadiusPixels = 40f;
+        [Tooltip("Durée avant que la tache soit effacée, en secondes")]
+        [Min(0.1f)]
+        [SerializeField] private float scorchDuration = 3f;
+
         public bool IsReady { get; private set; }
 
         private SpriteRenderer ballRenderer;
@@ -281,6 +291,8 @@ namespace DBZ.Combat
 
             if (makesWaterRipples)
                 WaterRipples.AddRing(impactCell, ringStartPixels, ringMaxPixels, ringDuration, ringCount);
+            if (scorchesGround)
+                WaterRipples.AddScorch(impactCell, scorchRadiusPixels, scorchDuration);
 
             if (impactPrefab != null)
             {

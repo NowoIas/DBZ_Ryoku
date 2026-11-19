@@ -80,6 +80,19 @@ namespace DBZ.Combat
         [Range(0f, 1f)]
         [SerializeField] private float launchAnimationTime = 0.5f;
 
+        [Header("Eau (WaterRipples, shader des tilemaps)")]
+        [Tooltip("La tête du dragon laisse un sillage en V sur l'eau à l'aller (rien au retour, ni à l'impact)")]
+        [SerializeField] private bool makesWaterRipples = true;
+        [Tooltip("Départ des vagues depuis le centre de la tête (pixels) : la tête est plus large qu'un Ki Blast")]
+        [Min(0f)]
+        [SerializeField] private float wakeStartPixels = 12f;
+        [Tooltip("Écartement maximal des vagues depuis le trajet (pixels)")]
+        [Min(0f)]
+        [SerializeField] private float wakeRangePixels = 32f;
+        [Tooltip("Durée de chaque vague (secondes)")]
+        [Min(0.01f)]
+        [SerializeField] private float wakeDuration = 0.6f;
+
         [Header("Affichage")]
         [SerializeField] private string sortingLayerName = "player";
         [Tooltip("Rang des boules dans la tranche de leur niveau (1 = techniques) ; la tête est un rang au-dessus")]
@@ -161,8 +174,14 @@ namespace DBZ.Combat
                     distance += cellsPerSecond * Time.deltaTime;
                     CheckPath();
                     if (distance >= endDistance)
-                    {
                         distance = endDistance;
+                    // Sillage de l'aller : chaque point du trajet lance sa vague au passage de la tête
+                    if (makesWaterRipples)
+                        WaterRipples.SetProjectile(this, origin, origin + direction * distance, wakeStartPixels, wakeRangePixels, wakeDuration);
+                    if (distance >= endDistance)
+                    {
+                        // Fin de l'aller : le sillage finit de s'écarter, rien au retour (choix util.)
+                        WaterRipples.EndProjectile(this);
                         phase = Phase.Impact;
                         impactEndTime = Time.time + impactDuration;
                         HitEnd();
@@ -257,6 +276,11 @@ namespace DBZ.Combat
                 head.transform.position = (Vector3)(origin + direction * distance + headOffset);
                 head.sortingOrder = sortingOrder + 1 + LevelAt(distance) * LevelMap.SortingOrdersPerLevel;
             }
+        }
+
+        private void OnDestroy()
+        {
+            WaterRipples.EndProjectile(this);
         }
 
         private int LevelAt(float at)
