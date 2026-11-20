@@ -16,7 +16,8 @@ namespace DBZ.Enemies
         // Manière de combattre une fois Goku repéré
         public enum CombatStyle
         {
-            // Fonce au corps à corps (tire quand même s'il se trouve aligné à distance) : Freezer, Cell
+            // Fonce au corps à corps (tire quand même s'il se trouve aligné à distance) : Cell.
+            // Son attaque spéciale peut le faire s'écarter pour la lancer (EnemySpecialAttack : Firing Range)
             Melee,
             // Garde ses distances : se place aligné avec Goku pour tirer, recule s'il vient au contact (frappe s'il est coincé) : Raditz
             Ranged
@@ -137,6 +138,10 @@ namespace DBZ.Enemies
         private float currentSpeed;
         // Ballon à l'image précédente : l'arrêt (Freeze) n'est fait qu'une fois
         private bool wasLocked;
+        // Corps à corps qui s'écarte pour son attaque spéciale : début de la recherche de place (-1 = pas en cours)
+        private float repositionStart = -1f;
+        // Le chemin en cours a été calculé en gardant ses distances (sinon : vers Goku)
+        private bool pathKeepsDistance;
 
         private void Awake()
         {
@@ -228,6 +233,27 @@ namespace DBZ.Enemies
             // Direction principale vers Goku (pour se tourner quand il n'est pas aligné)
             Vector2 mainTowardPlayer = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y) ? new Vector2(towardPlayer.x, 0f) : new Vector2(0f, towardPlayer.y);
 
+            // Corps à corps dont l'attaque spéciale est prête et veut de la distance (Kamehameha de Cell) : il se comporte
+            // comme un tireur (s'écarte, se place aligné) jusqu'à la lancer ; place pas trouvée à temps : remise à plus tard
+            bool repositioning = combatStyle == CombatStyle.Melee && special != null && special.WantsFiringSpot
+                && special.IsReady && sameLevel;
+            if (repositioning)
+            {
+                if (repositionStart < 0f)
+                    repositionStart = Time.time;
+                else if (Time.time - repositionStart > special.MaxRepositionTime)
+                {
+                    special.Postpone();
+                    repositioning = false;
+                    repositionStart = -1f;
+                }
+            }
+            else
+                repositionStart = -1f;
+            bool keepsDistance = combatStyle == CombatStyle.Ranged || repositioning;
+            Vector2Int range = repositioning ? special.FiringRange : preferredRange;
+            int rowOffset = repositioning ? special.HorizontalRowOffset : 0;
+
             // Attaque spéciale (boss) prête et Goku à portée : elle passe avant le reste
             if (special != null && special.IsReady && special.CanUse(delta, sameLevel) && Time.time >= nextAttackTime)
             {
@@ -240,7 +266,7 @@ namespace DBZ.Enemies
             // (à distance : il recule d'abord s'il peut)
             if (sameLevel && distance == 1 && CollisionMap.CanMoveOnLevel(transform.position, towardPlayer, level))
             {
-                if (combatStyle == CombatStyle.Ranged && TryStepAway(myCell, playerCell))
+                if (keepsDistance && TryStepAway(myCell, playerCell))
                     return;
                 Face(towardPlayer);
                 if (Time.time >= nextAttackTime)
@@ -258,8 +284,7 @@ namespace DBZ.Enemies
             }
 
             // À distance, déjà bien placé (aligné, à bonne distance, ligne dégagée) : il attend son prochain tir, tourné vers Goku
-            if (combatStyle == CombatStyle.Ranged && sameLevel && (delta.x == 0 || delta.y == 0)
-                && distance >= preferredRange.x && distance <= preferredRange.y && HasClearShot(delta))
+            if (keepsDistance && sameLevel && IsAtFiringSpot(delta, range, rowOffset))
             {
                 path.Clear();
                 Face(towardPlayer);
@@ -268,15 +293,16 @@ namespace DBZ.Enemies
 
             // Chemin recalculé seulement si Goku a changé de case ou de niveau, ou si le chemin est fini
             // (au plus toutes les repathInterval secondes quand aucun chemin n'avance)
-            bool targetChanged = playerCell != pathTargetCell || player.Level != pathTargetLevel;
+            bool targetChanged = playerCell != pathTargetCell || player.Level != pathTargetLevel || keepsDistance != pathKeepsDistance;
             if (targetChanged || (path.Count == 0 && Time.time >= nextRepathTime))
             {
                 ForgetOldAvoidCells();
                 // À distance : vers une place de tir ; aucune trouvée : il s'approche comme les autres
-                if (combatStyle != CombatStyle.Ranged || !FindPathToFiringSpot(myCell, playerCell))
+                if (!keepsDistance || !FindPathToFiringSpot(myCell, playerCell, range, rowOffset))
                     GridPathfinder.FindPathToNeighbor(myCell, level, playerCell, player.Level, searchRadius, maxSearchNodes, path, avoidCells);
                 pathTargetCell = playerCell;
                 pathTargetLevel = player.Level;
+                pathKeepsDistance = keepsDistance;
                 nextRepathTime = Time.time + repathInterval;
             }
 
@@ -299,22 +325,25 @@ namespace DBZ.Enemies
             StartStep(step, moveSpeed);
         }
 
-        // Places de tir : cases alignées avec Goku (même ligne ou colonne) à preferredRange, ligne dégagée jusqu'à lui.
+        // Places de tir : cases alignées avec Goku (même ligne ou colonne) à range (de ... à ...), ligne dégagée jusqu'à lui.
+        // rowOffset : tir horizontal parti de la rangée au-dessus (Cell) → place à gauche / à droite une rangée sous Goku.
         // Les plus proches de l'ennemi sont essayées d'abord (maxFiringSpotsTried au plus) ; vrai si un chemin y mène
         private readonly List<Vector2Int> firingSpots = new List<Vector2Int>();
         private readonly List<Vector2Int> avoidWithPlayer = new List<Vector2Int>();
         private static readonly Vector2Int[] CardinalDirections = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-        private bool FindPathToFiringSpot(Vector2Int myCell, Vector2Int playerCell)
+        private bool FindPathToFiringSpot(Vector2Int myCell, Vector2Int playerCell, Vector2Int range, int rowOffset)
         {
             firingSpots.Clear();
-            for (int d = preferredRange.x; d <= preferredRange.y; d++)
+            for (int d = range.x; d <= range.y; d++)
             {
                 foreach (Vector2Int dir in CardinalDirections)
                 {
-                    Vector2Int spot = playerCell + dir * d;
-                    Vector3 spotCenter = new Vector3(spot.x + 0.5f, spot.y + 0.5f, 0f);
-                    if (HasClearShotFrom(spotCenter, player.Level, playerCell - spot))
+                    // Départ du tir : rangée de Goku ; la place est rowOffset rangées plus bas pour un tir horizontal
+                    Vector2Int shotStart = playerCell + dir * d;
+                    Vector2Int spot = dir.y == 0 ? shotStart - new Vector2Int(0, rowOffset) : shotStart;
+                    Vector3 shotCenter = new Vector3(shotStart.x + 0.5f, shotStart.y + 0.5f, 0f);
+                    if (HasClearShotFrom(shotCenter, player.Level, playerCell - shotStart))
                         firingSpots.Add(spot);
                 }
             }
@@ -621,10 +650,27 @@ namespace DBZ.Enemies
             isAttacking = false;
         }
 
-        // Rien entre l'ennemi et Goku (aligné) : ni côté bloqué sur les calques de collision, ni objet qui bloque
-        private bool HasClearShot(Vector2Int delta)
+        // Rien entre l'ennemi et Goku (aligné) : ni côté bloqué sur les calques de collision, ni objet qui bloque.
+        // Public : lu aussi par les attaques spéciales (EnemyBeam)
+        public bool HasClearShot(Vector2Int delta)
         {
             return HasClearShotFrom(transform.position, level, delta);
+        }
+
+        // Tir horizontal parti de rowOffset rangées au-dessus (delta : case de Goku moins case de l'ennemi)
+        public bool HasClearShotFromRow(Vector2Int delta, int rowOffset)
+        {
+            return HasClearShotFrom(transform.position + Vector3.up * rowOffset, level, delta - new Vector2Int(0, rowOffset));
+        }
+
+        // Bien placé pour tirer : même colonne, ou à gauche / à droite rowOffset rangées sous Goku, à range, ligne dégagée
+        private bool IsAtFiringSpot(Vector2Int delta, Vector2Int range, int rowOffset)
+        {
+            if (delta.x == 0)
+                return Mathf.Abs(delta.y) >= range.x && Mathf.Abs(delta.y) <= range.y && HasClearShot(delta);
+            if (delta.y == rowOffset)
+                return Mathf.Abs(delta.x) >= range.x && Mathf.Abs(delta.x) <= range.y && HasClearShotFromRow(delta, rowOffset);
+            return false;
         }
 
         // Même test depuis une autre case (place de tir envisagée)

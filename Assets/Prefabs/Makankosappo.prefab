@@ -84,6 +84,7 @@ MonoBehaviour:
   hitRadius: 0.3
   canDestroyObstacles: 1
   piercesTargets: 1
+  firedByEnemy: 0
   impactAtTip: 1
   targetOverlapPixels: 0
   openDuration: 0
@@ -93,3 +94,10 @@ MonoBehaviour:
   sortingOrder: 1
   startBehindPlayerDirections: 13
   tipBehindTargetDirections: 0
+  makesWaterRipples: 1
+  clashPower: 1
+  clashPushCellsPerSecond: 2
+  clashSprites:
+  - {fileID: -2703793478997954923, guid: c13743b4513301d4ca5caf4ba5b65fcb, type: 3}
+  - {fileID: 3111147622334850017, guid: c13743b4513301d4ca5caf4ba5b65fcb, type: 3}
+  clashFramesPerSecond: 8

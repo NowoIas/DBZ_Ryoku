@@ -77,6 +77,9 @@ namespace DBZ.Combat
         [SerializeField] private bool canDestroyObstacles = true;
         [Tooltip("Traverse les ennemis et les cibles (Makankosappo) : seuls les murs l'arrêtent, il frappe tout ce qui est sur son trajet")]
         [SerializeField] private bool piercesTargets = false;
+        [Tooltip("Rayon tiré par un ennemi (Kamehameha de Cell) : blesse Goku et les alliés (Hit Layers : ajouter Player), "
+            + "ne compte pas comme un coup du joueur")]
+        [SerializeField] private bool firedByEnemy = false;
         [Tooltip("Impact toujours dessiné au bout du rayon tant que la touche est tenue, même sans rien toucher (Makankosappo)")]
         [SerializeField] private bool impactAtTip = false;
         [Tooltip("Arrêté par un ennemi, une cible ou un obstacle cassable : le bout du rayon avance de ces pixels dans sa case, "
@@ -111,8 +114,47 @@ namespace DBZ.Combat
         [Tooltip("Le rayon fait des vaguelettes sur l'eau autour de lui (WaterRipples, shader des tilemaps)")]
         [SerializeField] private bool makesWaterRipples = true;
 
+        [Header("Duel de rayons (face à face)")]
+        [Tooltip("Puissance face à un autre rayon sur la même ligne, en sens inverse : le plus fort repousse l'autre. "
+            + "À égalité, le rayon du joueur gagne")]
+        [SerializeField] private float clashPower = 1f;
+        [Tooltip("Vitesse à laquelle ce rayon repousse le point de contact quand il gagne le duel (cases par seconde)")]
+        [Min(0f)]
+        [SerializeField] private float clashPushCellsPerSecond = 2f;
+        [Tooltip("Boule d'énergie au point de contact, en alternance (impact_beam) ; vide = celle de l'autre rayon, ou aucune")]
+        [SerializeField] private Sprite[] clashSprites = new Sprite[0];
+        [Tooltip("Vitesse d'alternance de la boule du point de contact (images par seconde)")]
+        [SerializeField] private float clashFramesPerSecond = 8f;
+
         public bool IsReleased { get; private set; }
         public float Cooldown => cooldown;
+        public float ClashPower => clashPower;
+        public float ClashPushCellsPerSecond => clashPushCellsPerSecond;
+        public bool FiredByEnemy => firedByEnemy;
+        public Sprite[] ClashSprites => clashSprites;
+        public float ClashFramesPerSecond => clashFramesPerSecond;
+        public Vector2 Direction => direction;
+        public int LaunchLevel => launchLevel;
+        public string SortingLayerName => sortingLayerName;
+        public int SortingOrder => sortingOrder;
+        // Décalage de l'axe du rayon (alignement sur les mains), perpendiculaire au tir, en unités du monde
+        public Vector3 AxisOffset { get; private set; }
+        // En duel avec un autre rayon (le tireur ennemi tient alors son rayon jusqu'au bout du duel)
+        public bool IsClashing => clash != null;
+        // Repoussé jusqu'à son tireur par un rayon plus fort : relâché
+        public bool IsBeaten { get; private set; }
+
+        // Rayons tenus en cours (duels)
+        private static readonly System.Collections.Generic.List<KamehamehaBeam> ActiveBeams =
+            new System.Collections.Generic.List<KamehamehaBeam>();
+        private BeamClash clash;
+
+        // Domain Reload désactivé : liste vidée à chaque lancement du mode Play
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            ActiveBeams.Clear();
+        }
         // Décalage à appliquer à l'ordre d'affichage du joueur qui tire, tant que le rayon existe : au-dessus de son rayon
         // (départ derrière lui), en dessous quand tout le rayon passe sous une cible collée, 0 sinon
         public int ShooterSortingOffset { get; private set; }
@@ -159,6 +201,7 @@ namespace DBZ.Combat
         {
             direction = dir;
             launchLevel = level;
+            ActiveBeams.Add(this);
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
 
@@ -169,6 +212,7 @@ namespace DBZ.Combat
             // Arrondi : la rotation laisse de minuscules erreurs (0,9999 px au lieu de 1)
             Vector2 localOffset = new Vector2(Mathf.Round(localPixels.x), Mathf.Round(localPixels.y)) / 32f;
             Vector3 across = new Vector3(0f, localOffset.y, 0f);
+            AxisOffset = transform.rotation * across;
             float along = localOffset.x;
             startAlong = along;
 
@@ -271,10 +315,83 @@ namespace DBZ.Combat
 
         public void Release()
         {
+            if (IsReleased)
+                return;
             IsReleased = true;
             releaseTime = Time.time;
             releaseVisible = lastVisible;
             WaterRipples.EndBeam(this);
+            // Relâché pendant un duel : l'autre rayon reprend sa course
+            EndClash();
+            ActiveBeams.Remove(this);
+        }
+
+        // Duel : commencé quand ce rayon et un rayon face à lui se touchent ; le gagnant avance le point de contact
+        private void UpdateClash()
+        {
+            if (clash != null)
+            {
+                KamehamehaBeam other = clash.Other(this);
+                if (other == null || other.IsReleased)
+                {
+                    EndClash();
+                    return;
+                }
+                if (clash.Winner == this)
+                {
+                    clash.Advance(Time.deltaTime);
+                    clash.UpdateBall();
+                    // Repoussé jusqu'à son tireur : le perdant est battu, le gagnant le touchera en reprenant sa course
+                    if (clash.LengthOf(clash.Loser) <= 0f)
+                    {
+                        KamehamehaBeam loser = clash.Loser;
+                        EndClash();
+                        loser.IsBeaten = true;
+                        loser.Release();
+                    }
+                }
+                return;
+            }
+
+            foreach (KamehamehaBeam other in ActiveBeams)
+            {
+                if (other == this || other == null || other.clash != null || other.IsReleased || other.cells == null)
+                    continue;
+                if (!FacesBeam(other, out float distance) || grown + other.grown < distance)
+                    continue;
+                // Point de contact au milieu du chevauchement de la dernière image
+                float point = grown - (grown + other.grown - distance) / 2f;
+                clash = new BeamClash(this, other, distance, point);
+                other.clash = clash;
+                clash.UpdateBall();
+                return;
+            }
+        }
+
+        // Même ligne, sens inverse, même niveau de départ, l'un devant l'autre ; distance entre leurs départs, en cases
+        private bool FacesBeam(KamehamehaBeam other, out float distance)
+        {
+            distance = 0f;
+            if (other.direction != -direction || other.launchLevel != launchLevel)
+                return false;
+            Vector2 delta = other.transform.position - transform.position;
+            float across = delta.x * direction.y - delta.y * direction.x;
+            if (Mathf.Abs(across) > 0.01f)
+                return false;
+            // Départ = bord arrière de la 1re case de chaque rayon
+            distance = Vector2.Dot(delta, direction) + 1f;
+            return distance > 0f;
+        }
+
+        private void EndClash()
+        {
+            if (clash == null)
+                return;
+            KamehamehaBeam other = clash.Other(this);
+            if (other != null && other.clash == clash)
+                other.clash = null;
+            clash.Dispose();
+            clash = null;
         }
 
         private void Update()
@@ -292,7 +409,13 @@ namespace DBZ.Combat
             if (IsReleased)
                 trail += cellsPerSecond * Time.deltaTime;
             else
+            {
                 grown = Mathf.Min(grown + cellsPerSecond * Time.deltaTime, maxLength);
+                UpdateClash();
+                // En duel : le rayon s'arrête au point de contact
+                if (clash != null)
+                    grown = Mathf.Min(grown, clash.LengthOf(this));
+            }
 
             // Premier obstacle ou ennemi sur la partie du rayon déjà sortie
             int reach = Mathf.CeilToInt(grown);
@@ -328,12 +451,13 @@ namespace DBZ.Combat
             }
 
             int visible = reach;
-            bool isHitting = blockedIndex >= 0;
+            // En duel : impact dessiné au point de contact
+            bool isHitting = blockedIndex >= 0 || clash != null;
             // Collé à un ennemi, une cible ou une case pleine (case pleine, montagne) : l'impact recule contre le départ,
             // dans la case de l'obstacle, au lieu d'aller jusqu'à son bord du fond
             impactAgainstStart = blockedIndex == 0
                 && (target != null || CollisionMap.IsTechniqueSolidCell(CellCenter(0), cellLevel));
-            if (isHitting)
+            if (blockedIndex >= 0)
             {
                 // Le rayon s'arrête sur la case avant la cible ; collé à elle (aucune case libre),
                 // l'impact est dessiné sur sa case pour rester visible. Il repartira si la cible disparaît
@@ -467,7 +591,7 @@ namespace DBZ.Combat
 
             var health = target.GetComponentInParent<Health>();
             if (health != null)
-                PlayerCombat.Hit(health, damage);
+                HitHealth(health);
 
             if (canDestroyObstacles)
             {
@@ -475,6 +599,16 @@ namespace DBZ.Combat
                 if (destructibles != null)
                     destructibles.TakeDamage(cellCenter, damage);
             }
+        }
+
+        // Rayon du joueur : coup du joueur (alliés épargnés, compte comme un combat).
+        // Rayon d'un ennemi : dégâts directs (Goku, alliés ; le combat est compté par le joueur quand il est blessé)
+        private void HitHealth(Health health)
+        {
+            if (!firedByEnemy)
+                PlayerCombat.Hit(health, damage);
+            else if (!health.IsDead)
+                health.TakeDamage(damage);
         }
 
         // Rayon qui traverse : frappe une fois par intervalle chaque cible des cases 0 à count - 1 (à leur niveau).
@@ -511,7 +645,7 @@ namespace DBZ.Combat
                 if (health != null && !hitTargets.Contains(health))
                 {
                     hitTargets.Add(health);
-                    PlayerCombat.Hit(health, damage);
+                    HitHealth(health);
                 }
                 if (canDestroyObstacles && hit.TryGetComponent(out DestructibleTilemap destructibles))
                     destructibles.TakeDamage(cellCenter, damage);
@@ -651,6 +785,8 @@ namespace DBZ.Combat
         {
             // Rayon détruit sans relâchement (changement de scène...) : ses vagues s'éteignent quand même
             WaterRipples.EndBeam(this);
+            EndClash();
+            ActiveBeams.Remove(this);
             foreach (var cut in cutLaunchSprites.Values)
                 Destroy(cut);
         }

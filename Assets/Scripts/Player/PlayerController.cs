@@ -759,7 +759,7 @@ public class PlayerController : MonoBehaviour
         if (!paysWithHealth)
             ki.StartKamehamehaBeam();
 
-        while (key.IsPressed())
+        while (key.IsPressed() && beam != null && !beam.IsReleased)
         {
             // Plus assez de Ki (ou de PV : il ne peut pas se tuer avec son propre rayon) : le rayon s'arrête
             if (paysWithHealth ? !health.TrySpend(character.beamHealthPerSecond * Time.deltaTime) : ki.IsDepleted)

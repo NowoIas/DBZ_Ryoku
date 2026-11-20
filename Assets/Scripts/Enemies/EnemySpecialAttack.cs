@@ -14,9 +14,29 @@ namespace DBZ.Enemies
         [Tooltip("Délai avant la première attaque spéciale, une fois Goku repéré, en secondes")]
         [SerializeField] protected float firstDelay = 2f;
 
+        [Header("Mise en place (ennemi de corps à corps)")]
+        [Tooltip("Attaque prête : un ennemi de corps à corps s'écarte pour se placer aligné avec Goku, à cette distance "
+            + "(en cases, de ... à ...), puis la lance. 0 = il ne s'écarte pas (attaque lancée sur place)")]
+        [SerializeField] protected Vector2Int firingRange = Vector2Int.zero;
+        [Tooltip("Temps maximal passé à chercher sa place (secondes) ; au-delà, l'attaque est remise à plus tard")]
+        [SerializeField] protected float maxRepositionTime = 4f;
+        [Tooltip("Attaque remise à plus tard (place pas trouvée à temps) : nouvel essai après ce délai (secondes)")]
+        [SerializeField] protected float retryDelay = 2f;
+
         private float nextTime = float.MinValue;
 
         public bool IsReady => Time.time >= nextTime;
+        public bool WantsFiringSpot => firingRange.y > 0;
+        public Vector2Int FiringRange => firingRange;
+        public float MaxRepositionTime => maxRepositionTime;
+        // Tir horizontal parti de cette rangée au-dessus de l'ennemi (Cell : mains à hauteur de la case du dessus) ; 0 = sa rangée
+        public virtual int HorizontalRowOffset => 0;
+
+        // Place pas trouvée à temps : il reprend le corps à corps et réessaiera plus tard
+        public void Postpone()
+        {
+            nextTime = Time.time + retryDelay;
+        }
 
         // Appelé quand Goku est repéré : la première attaque ne part pas tout de suite
         public void OnChaseStarted()

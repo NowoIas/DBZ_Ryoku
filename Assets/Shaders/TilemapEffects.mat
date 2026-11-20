@@ -47,6 +47,7 @@ Material:
     - _EnableExternalAlpha: 0
     - _Flatten: 0.7
     - _RingSpacing: 10
+    - _ScorchDrop: 14
     - _ScorchDuration: 2
     - _ScorchStrength: 0.8
     - _ScorchWidth: 5

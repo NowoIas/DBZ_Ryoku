@@ -39,6 +39,7 @@ Shader "DBZ/Tilemap Effects"
         _ScorchColor("Teinte du sol brule (multiplie la couleur du sol)", Color) = (0.35, 0.28, 0.22, 1)
         _ScorchWidth("Demi-largeur de la trace (pixels)", Float) = 5
         _ScorchDuration("Duree de la trace apres le tir (secondes)", Float) = 2
+        _ScorchDrop("Trace des rayons horizontaux : decalage vers le bas (pixels)", Float) = 14
         _EmberColor("Couleur des braises", Color) = (1, 0.6, 0.2, 1)
 
         [Header(Ondes circulaires (explosions))]
@@ -125,6 +126,7 @@ Shader "DBZ/Tilemap Effects"
                 half4 _ScorchColor;
                 float _ScorchWidth;
                 float _ScorchDuration;
+                float _ScorchDrop;
                 half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;
@@ -343,6 +345,9 @@ Shader "DBZ/Tilemap Effects"
                     float2 ab = _WaterBeams[i].zw * 32.0 * ground - a;
                     float len = max(length(ab), 0.001);
                     float2 dir = ab / len;
+                    // Rayon horizontal : il est tiré à hauteur des mains, la trace est au sol, plus bas à l'écran
+                    // (_ScorchDrop pixels d'écran, remis dans le repère du sol) ; rayon vertical : inchangé
+                    a.y -= _ScorchDrop / _Flatten * abs(dir.x);
                     float along = dot(p - a, dir);
                     float alongIn = clamp(along, 0.0, len);
                     float d = length(p - a - dir * alongIn);
@@ -528,6 +533,7 @@ Shader "DBZ/Tilemap Effects"
                 half4 _ScorchColor;
                 float _ScorchWidth;
                 float _ScorchDuration;
+                float _ScorchDrop;
                 half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;
@@ -611,6 +617,7 @@ Shader "DBZ/Tilemap Effects"
                 half4 _ScorchColor;
                 float _ScorchWidth;
                 float _ScorchDuration;
+                float _ScorchDrop;
                 half4 _EmberColor;
                 float _RingSpacing;
                 float _WindPixels;

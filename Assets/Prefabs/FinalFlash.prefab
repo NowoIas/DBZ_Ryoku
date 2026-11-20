@@ -57,6 +57,16 @@ MonoBehaviour:
   downOffsetPixels: {x: 0, y: 11}
   leftOffsetPixels: {x: 0, y: 0}
   rightOffsetPixels: {x: 0, y: 0}
+  launchSpritesUp: []
+  launchSpritesDown: []
+  launchSpritesLeft: []
+  launchSpritesRight: []
+  launchUpOffsetPixels: {x: 0, y: 0}
+  launchDownOffsetPixels: {x: 0, y: 0}
+  launchLeftOffsetPixels: {x: 0, y: 0}
+  launchRightOffsetPixels: {x: 0, y: 0}
+  launchCoveredSegments: 2
+  launchCutMarginPixels: 0
   maxLength: 10
   cellsPerSecond: 30
   segmentsPerCell: 1
@@ -68,6 +78,7 @@ MonoBehaviour:
   hitRadius: 0.3
   canDestroyObstacles: 1
   piercesTargets: 0
+  firedByEnemy: 0
   impactAtTip: 0
   targetOverlapPixels: 8
   openDuration: 0.05
@@ -76,3 +87,11 @@ MonoBehaviour:
   sortingLayerName: player
   sortingOrder: 1
   startBehindPlayerDirections: 1
+  tipBehindTargetDirections: 2
+  makesWaterRipples: 1
+  clashPower: 1
+  clashPushCellsPerSecond: 2
+  clashSprites:
+  - {fileID: -2703793478997954923, guid: c13743b4513301d4ca5caf4ba5b65fcb, type: 3}
+  - {fileID: 3111147622334850017, guid: c13743b4513301d4ca5caf4ba5b65fcb, type: 3}
+  clashFramesPerSecond: 8
