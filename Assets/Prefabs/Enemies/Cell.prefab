@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 5629814108043289454}
   - component: {fileID: 8578179907879571348}
   - component: {fileID: 6548056279039894406}
-  - component: {fileID: 5328130321261281680}
+  - component: {fileID: 3976306216725984125}
   m_Layer: 0
   m_Name: Cell
   m_TagString: Untagged
@@ -234,6 +234,7 @@ MonoBehaviour:
   moveSpeed: 3
   detectionRange: 5
   giveUpRange: 10
+  alwaysChases: 0
   wanderRadius: 3
   wanderSpeed: 2
   wanderPause: {x: 1, y: 3}
@@ -314,7 +315,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.World.HeightLevel
   level: 0
---- !u!114 &5328130321261281680
+--- !u!114 &3976306216725984125
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -323,17 +324,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 8914585763547315146}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3f3b3717d5337ba48919841681227d67, type: 3}
+  m_Script: {fileID: 11500000, guid: 0d0697e5ead29134d8f9978a467f1543, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Enemies.EnemyBeam
-  cooldown: 8
-  range: 6
-  firstDelay: 2
-  firingRange: {x: 3, y: 5}
-  maxRepositionTime: 4
-  retryDelay: 2
-  beamPrefab: {fileID: 2334404194698315446, guid: 0578e68f46fe2c74d8b76b4e6f2ef003, type: 3}
-  chargeDuration: 0.25
-  holdDuration: 1.5
-  minDistance: 3
-  horizontalShotRowOffset: 0
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Enemies.BossStasis
+  healthThresholds:
+  - 0.5
+  - 0.25
+  minionPrefab: {fileID: 8914585763547315146, guid: 3bc77ba71588a2044b582b2cf87fc59e, type: 3}
+  minionCount: 5
+  spawnDistance: {x: 2, y: 4}
+  minionStagger: 0.15
+  solidObjectsLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  stasisFrames:
+  - {fileID: -5204149316748859387, guid: bd6b056618da2ed4cbaae6e9847d26dd, type: 3}
+  - {fileID: 5154320513066843834, guid: bd6b056618da2ed4cbaae6e9847d26dd, type: 3}
+  - {fileID: 8068125794943852826, guid: bd6b056618da2ed4cbaae6e9847d26dd, type: 3}
+  - {fileID: -2144581625279050485, guid: bd6b056618da2ed4cbaae6e9847d26dd, type: 3}
+  - {fileID: -7806544624989427910, guid: bd6b056618da2ed4cbaae6e9847d26dd, type: 3}
+  stasisFramesPerSecond: 6
+  alpha: 0.6
+  pulseColor: {r: 0.55, g: 1, b: 0.55, a: 1}
+  pulseSpeed: 1.5
+  bubbleSprites:
+  - {fileID: 4237866579542424786, guid: 82f821641677c44409fbed5c74d82e33, type: 3}
+  - {fileID: -7518094827424534902, guid: 82f821641677c44409fbed5c74d82e33, type: 3}
+  bubbleFramesPerSecond: 4
+  bubbleOffset: {x: 0, y: 0.5625}

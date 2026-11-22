@@ -39,6 +39,8 @@ namespace DBZ.Enemies
         [SerializeField] private int detectionRange = 5;
         [Tooltip("Distance (en cases) au-delà de laquelle il abandonne la poursuite")]
         [SerializeField] private int giveUpRange = 10;
+        [Tooltip("Poursuit Goku dès son apparition, quelle que soit la distance, sans jamais abandonner (sbires invoqués)")]
+        [SerializeField] private bool alwaysChases;
 
         [Header("Promenade (quand Goku n'est pas repéré)")]
         [Tooltip("Distance maximale de promenade autour du point de départ, en cases sur chaque axe")]
@@ -100,6 +102,8 @@ namespace DBZ.Enemies
         // Direction regardée et niveau de hauteur, lus par les attaques spéciales
         public Vector2 Facing => facing;
         public int Level => level;
+        // Mis en pause par un autre composant (stase de Cell) : ni déplacement ni attaque tant que c'est vrai
+        public bool IsPaused { get; set; }
 
         private Animator animator;
         // Attaque spéciale du boss (composant à côté, vide = aucune)
@@ -143,6 +147,20 @@ namespace DBZ.Enemies
         // Le chemin en cours a été calculé en gardant ses distances (sinon : vers Goku)
         private bool pathKeepsDistance;
 
+        // Ennemis actifs : la case visée par un pas est réservée tout de suite (les colliders ne sont déplacés qu'en fin
+        // d'Update, deux ennemis décidant à la même image entraient sinon dans la même case). Se vide seule (OnDisable)
+        private static readonly List<EnemyController> Active = new List<EnemyController>();
+
+        private void OnEnable()
+        {
+            Active.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            Active.Remove(this);
+        }
+
         private void Awake()
         {
             animator = GetComponent<Animator>();
@@ -184,10 +202,16 @@ namespace DBZ.Enemies
         private void Update()
         {
             // Transformé en ballon (Volleyball de Gotenks) : ni déplacement ni attaque tant que ça dure
-            if (StatusEffects.IsLockedOn(gameObject))
+            if (IsPaused || StatusEffects.IsLockedOn(gameObject))
             {
                 if (!wasLocked)
+                {
                     Freeze();
+                    // Stase : l'Animator tourne encore, il doit repasser à l'attente
+                    animator.SetBool(IsMoving, false);
+                    if (cellCollider != null)
+                        cellCollider.position = moveTarget;
+                }
                 wasLocked = true;
                 return;
             }
@@ -217,9 +241,9 @@ namespace DBZ.Enemies
             // Repérage à vol d'oiseau, quel que soit le niveau (Goku sur le pont au-dessus de lui est repéré).
             // Goku K.O. ou en vol : pas repéré, la poursuite en cours s'arrête (il reprend sa promenade)
             bool playerHidden = (playerHealth != null && playerHealth.IsDead) || player.IsFlying;
-            if (!isChasing && distance <= detectionRange && !playerHidden)
+            if (!isChasing && (alwaysChases || distance <= detectionRange) && !playerHidden)
                 StartChase();
-            else if (isChasing && (distance > giveUpRange || playerHidden))
+            else if (isChasing && ((!alwaysChases && distance > giveUpRange) || playerHidden))
                 StopChase();
 
             if (!isChasing)
@@ -546,8 +570,17 @@ namespace DBZ.Enemies
             // Case de Goku, s'il y est au même niveau (sur le pont au-dessus, on passe dessous)
             Vector3 target = transform.position + (Vector3)direction;
             bool playerThere = CellOf(target) == CellOf(player.OccupiedCell) || CellOf(target) == CellOf(player.transform.position);
-            if (playerThere && player.Level == LevelMap.LevelAfterEntering(target, level))
+            int targetLevel = LevelMap.LevelAfterEntering(target, level);
+            if (playerThere && player.Level == targetLevel)
                 return false;
+
+            // Case déjà visée (ou occupée) par un autre ennemi vivant, au même niveau
+            Vector2Int targetCell = CellOf(target);
+            foreach (var other in Active)
+            {
+                if (other != this && !other.health.IsDead && other.level == targetLevel && CellOf(other.moveTarget) == targetCell)
+                    return false;
+            }
 
             // Les autres objets qui bloquent, à son niveau (sauf son propre collider, déjà sur sa case)
             foreach (var hit in Physics2D.OverlapCircleAll(target, collisionCheckRadius, solidObjectsLayer))

@@ -20,6 +20,11 @@ namespace DBZ.Combat
         public bool IsDead => Current <= 0f;
         public bool IsAlly => isAlly;
 
+        // Invulnérable (stase des boss) : les coups ne font rien, ni chiffre ni clignotement
+        public bool IsInvulnerable { get; set; }
+        // Plancher de PV : un coup ne descend pas en dessous (seuils de stase : un gros coup ne saute pas une phase). 0 = aucun
+        public float MinHealth { get; set; }
+
         // Paramètres : dégâts reçus, coup critique ou non (pour l'affichage des dégâts)
         public event Action<float, bool> Damaged;
         // Paramètre : PV réellement rendus (pour l'affichage du soin)
@@ -33,10 +38,10 @@ namespace DBZ.Combat
 
         public void TakeDamage(float amount, bool isCritical = false)
         {
-            if (IsDead || amount <= 0f)
+            if (IsDead || amount <= 0f || IsInvulnerable)
                 return;
 
-            Current = Mathf.Max(0f, Current - amount);
+            Current = Mathf.Max(Current > MinHealth ? MinHealth : 0f, Current - amount);
             Damaged?.Invoke(amount, isCritical);
 
             if (IsDead)

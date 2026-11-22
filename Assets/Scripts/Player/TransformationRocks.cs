@@ -334,13 +334,14 @@ namespace DBZ.Player
             Clear();
         }
 
-        private static Sprite BodyOf(Sprite source)
+        // Public : réutilisé par GroundBurst (sortie de terre des sbires)
+        public static Sprite BodyOf(Sprite source)
         {
             Split(source);
             return bodyCache[source];
         }
 
-        private static Sprite ShadowOf(Sprite source)
+        public static Sprite ShadowOf(Sprite source)
         {
             Split(source);
             return shadowCache[source];
