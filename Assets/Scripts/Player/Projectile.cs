@@ -319,6 +319,7 @@ public class Projectile : MonoBehaviour
     private void SpawnImpact(Vector3 position)
     {
         var impact = Instantiate(impactPrefab, position, Quaternion.identity);
+        impact.SetDirection(direction);
         if (impact.TryGetComponent(out SpriteRenderer impactRenderer))
             impactRenderer.sortingOrder += level * LevelMap.SortingOrdersPerLevel;
     }

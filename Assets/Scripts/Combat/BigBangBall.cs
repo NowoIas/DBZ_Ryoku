@@ -274,6 +274,7 @@ namespace DBZ.Combat
             if (impactPrefab == null)
                 return;
             var impact = Instantiate(impactPrefab, cell, Quaternion.identity);
+            impact.SetDirection(direction);
             if (impact.TryGetComponent(out SpriteRenderer impactRenderer))
                 impactRenderer.sortingOrder += level * LevelMap.SortingOrdersPerLevel;
         }

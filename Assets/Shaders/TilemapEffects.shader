@@ -419,8 +419,15 @@ Shader "DBZ/Tilemap Effects"
 
                 // VENT : la marque est dans l'alpha de la couleur de la tuile (254 à 247 sur 255), remis à 1
                 half windMark = round((1.0 - input.color.a) * 255.0);
+                // TRACES DE PAS : marques 10 neige (alpha 245), 11 sable clair (244), 12 sable foncé (243), lues par le
+                // code seulement (Footprints) : alpha remis à 1
+                if (windMark > 9.5 && windMark < 12.5)
+                {
+                    windMark = 0.0;
+                    input.color.a = 1.0;
+                }
                 // EAU : marque 9 (alpha 246) = tuile d'eau ; sans elle, pas de vagues (fenêtres du même bleu...)
-                if (windMark < 0.5 || windMark > 9.5)
+                else if (windMark < 0.5 || windMark > 9.5)
                     windMark = 0.0;
                 else
                     input.color.a = 1.0;

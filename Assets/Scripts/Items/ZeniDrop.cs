@@ -90,7 +90,8 @@ namespace DBZ.Items
                 for (int i = 0; i < perCell[c].Count; i++)
                 {
                     var position = new Vector3(key.x + 0.5f + slots[i].x / 32f, key.y + 0.5f + slots[i].y / 32f, 0f);
-                    ZeniCoin.Spawn(coinPrefab, perCell[c][i], position, key);
+                    // Toutes ensemble, en cloche depuis le centre de l'objet K.O.
+                    ZeniCoin.Spawn(coinPrefab, perCell[c][i], position, key, transform.position);
                 }
             }
         }
