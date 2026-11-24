@@ -17056,6 +17056,10 @@ MonoBehaviour:
   healthOverrides: []
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.1
+  explosionPrefab: {fileID: 5756099295064145433, guid: 052584749d0d304459f66212d59a28e4, type: 3}
+  explosionSortingLayer: player
+  explosionSortingRank: 2
+  tileHideDelay: 0.083333336
 --- !u!19719996 &1530031490
 TilemapCollider2D:
   m_ObjectHideFlags: 0

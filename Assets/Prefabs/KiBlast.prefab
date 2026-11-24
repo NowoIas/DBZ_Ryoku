@@ -139,6 +139,7 @@ MonoBehaviour:
   loopFrameCount: 0
   loopCellsPerFrame: 1
   rotateWithDirection: 0
+  framesEightDirections: []
   upOffsetPixels: {x: 0, y: 0}
   downOffsetPixels: {x: 0, y: 0}
   leftOffsetPixels: {x: 0, y: 0}
@@ -150,3 +151,8 @@ MonoBehaviour:
   burnDamage: 5
   burnInterval: 0.5
   burnIcon: {fileID: 0}
+  burnIconFrames: []
+  absorbable: 1
+  makesWaterRipples: 1
+  homingTurnEveryCells: 2
+  homingMaxTurns: 3

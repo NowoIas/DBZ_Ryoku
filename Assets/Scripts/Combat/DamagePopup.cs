@@ -14,6 +14,8 @@ namespace DBZ.Combat
 
         [Tooltip("Sprites des chiffres 0 à 9 des soins (verts), dans l'ordre (vide = chiffres normaux)")]
         [SerializeField] private Sprite[] healDigitSprites = new Sprite[10];
+        [Tooltip("Chiffres gris d'un coup sans effet (boss en stase), 0 à 9 (blocked_digits)")]
+        [SerializeField] private Sprite[] blockedDigitSprites = new Sprite[10];
 
         [Tooltip("Écart entre deux chiffres, en pixels (négatif = le chiffre de droite recouvre le bord du précédent)")]
         [SerializeField] private int digitSpacing = -1;
@@ -42,8 +44,9 @@ namespace DBZ.Combat
         private Color color;
         private float pixelsPerUnit = 32f;
 
-        // isHeal : PV rendus, chiffres verts (même mouvement qu'un coup normal)
-        public void Show(int amount, bool isCritical, bool isHeal = false)
+        // isHeal : PV rendus, chiffres verts (même mouvement qu'un coup normal) ; isBlocked : coup sans effet (stase), chiffres gris
+        // customDigits : chiffres propres à la cible (dégâts reçus par Goku), prioritaires s'ils sont complets
+        public void Show(int amount, bool isCritical, bool isHeal = false, bool isBlocked = false, Sprite[] customDigits = null)
         {
             startPosition = transform.position;
             rise = isCritical ? criticalRiseDistance : riseDistance;
@@ -51,7 +54,11 @@ namespace DBZ.Combat
 
             // Critique et soin : leur propre planche de chiffres (plus de teinte)
             Sprite[] sprites = digitSprites;
-            if (isHeal && HasAllDigits(healDigitSprites))
+            if (HasAllDigits(customDigits))
+                sprites = customDigits;
+            else if (isBlocked && HasAllDigits(blockedDigitSprites))
+                sprites = blockedDigitSprites;
+            else if (isHeal && HasAllDigits(healDigitSprites))
                 sprites = healDigitSprites;
             else if (isCritical && HasAllDigits(criticalDigitSprites))
                 sprites = criticalDigitSprites;

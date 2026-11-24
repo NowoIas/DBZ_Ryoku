@@ -349,8 +349,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.DamagePopupSpawner
   popupPrefab: {fileID: 5897258830044289627, guid: fa6c98af3929f4240ab7c415303680e1, type: 3}
-  showDamage: 0
+  showDamage: 1
   showHeal: 1
+  damageDigitSprites:
+  - {fileID: -4267824655601238369, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: -7610335838860586245, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: 4921081859553773598, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: 3250774946372296175, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: 506605902, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: 1545119627, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: -671854235, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: 2144674592, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: -630950919, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  - {fileID: -1389257585, guid: 661f8e5bacdaa5c4f9d732b201a43130, type: 3}
+  showBlocked: 1
   offset: {x: 0, y: 0.5}
   horizontalJitter: 4
 --- !u!114 &5978653041979736278

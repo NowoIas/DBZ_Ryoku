@@ -27,13 +27,55 @@ namespace DBZ.World
         [SerializeField] private Color hitColor = Color.red;
         [SerializeField] private float flashDuration = 0.1f;
 
+        [Header("Explosion à la destruction (vide = aucune)")]
+        [Tooltip("Explosion jouée sur la case détruite (prefab DestructibleExplosion)")]
+        [SerializeField] private GameObject explosionPrefab;
+        [Tooltip("Calque d'affichage de l'explosion")]
+        [SerializeField] private string explosionSortingLayer = "player";
+        [Tooltip("Rang dans les ordres du niveau (2 = impacts des techniques)")]
+        [SerializeField] private int explosionSortingRank = 2;
+        [Tooltip("Temps pendant lequel une copie de la tuile reste affichée (2e image = grosse boule, qui la cache), en secondes ; la collision disparaît tout de suite")]
+        [SerializeField] private float tileHideDelay = 1f / 12f;
+
         private Tilemap tilemap;
+        private TilemapRenderer tilemapRenderer;
         // PV restants des seules cases déjà abîmées ; les autres ont encore tous leurs PV
         private readonly Dictionary<Vector3Int, float> damagedCells = new Dictionary<Vector3Int, float>();
 
         private void Awake()
         {
             tilemap = GetComponent<Tilemap>();
+            tilemapRenderer = GetComponent<TilemapRenderer>();
+        }
+
+        // Explosion sur la case + copie de la tuile gardée tileHideDelay (la vraie tuile, et sa collision, sont déjà retirées)
+        private void Explode(Vector3Int cell, Sprite sprite, Matrix4x4 matrix, Color color)
+        {
+            Vector3 center = tilemap.GetCellCenterWorld(cell);
+            var explosion = Instantiate(explosionPrefab, center, Quaternion.identity);
+            var explosionRenderer = explosion.GetComponent<SpriteRenderer>();
+            if (explosionRenderer != null)
+            {
+                explosionRenderer.sortingLayerName = explosionSortingLayer;
+                explosionRenderer.sortingOrder = HeightLevel.Of(this) * LevelMap.SortingOrdersPerLevel + explosionSortingRank;
+            }
+
+            if (sprite == null || tileHideDelay <= 0f)
+                return;
+            var copy = new GameObject("DestroyedTile");
+            copy.transform.SetPositionAndRotation(center + (Vector3)matrix.GetColumn(3), matrix.rotation);
+            copy.transform.localScale = matrix.lossyScale;
+            var copyRenderer = copy.AddComponent<SpriteRenderer>();
+            copyRenderer.sprite = sprite;
+            // Alpha remis à 1 : certaines tuiles portent une marque dans leur alpha (lue par le shader des tilemaps seulement)
+            color.a = 1f;
+            copyRenderer.color = color;
+            if (tilemapRenderer != null)
+            {
+                copyRenderer.sortingLayerID = tilemapRenderer.sortingLayerID;
+                copyRenderer.sortingOrder = tilemapRenderer.sortingOrder;
+            }
+            Destroy(copy, tileHideDelay);
         }
 
         // worldPoint : un point situé dans la case touchée
@@ -50,9 +92,14 @@ namespace DBZ.World
             health -= amount;
             if (health <= 0f)
             {
+                Sprite sprite = tilemap.GetSprite(cell);
+                Matrix4x4 matrix = tilemap.GetTransformMatrix(cell);
+                Color color = tilemap.GetColor(cell);
                 // Le TilemapCollider2D se met à jour tout seul : la case devient franchissable
                 tilemap.SetTile(cell, null);
                 damagedCells.Remove(cell);
+                if (explosionPrefab != null)
+                    Explode(cell, sprite, matrix, color);
             }
             else
             {

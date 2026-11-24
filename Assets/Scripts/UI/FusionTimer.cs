@@ -21,9 +21,16 @@ namespace DBZ.UI
         private const int MaxCharacters = 5;
         private UIImage[] images;
         private int shownSeconds = int.MinValue;
+        [Tooltip("Écart sous la barre du boss quand elle est affichée, en pixels")]
+        [SerializeField] private int gapBelowBossBar = 2;
+        // Position de départ (en haut à droite), le chrono descend sous la barre du boss quand elle est affichée
+        private Vector2 basePosition;
+        private RectTransform rectTransform;
 
         private void Awake()
         {
+            rectTransform = (RectTransform)transform;
+            basePosition = rectTransform.anchoredPosition;
             images = new UIImage[MaxCharacters];
             for (int i = 0; i < MaxCharacters; i++)
                 images[i] = CreateImage($"Char{i}");
@@ -43,6 +50,9 @@ namespace DBZ.UI
             int seconds = timeLeft < 0f ? -1 : Mathf.CeilToInt(timeLeft);
             if (seconds != shownSeconds)
                 Show(seconds);
+
+            float drop = BossBar.VisibleHeight > 0f ? BossBar.VisibleHeight + gapBelowBossBar : 0f;
+            rectTransform.anchoredPosition = basePosition - new Vector2(0f, drop);
         }
 
         // seconds < 0 : chrono caché

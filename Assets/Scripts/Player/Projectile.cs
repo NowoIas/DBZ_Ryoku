@@ -67,6 +67,9 @@ public class Projectile : MonoBehaviour
     [Tooltip("Icône animée (remplace burnIcon si remplie) : une image de plus à chaque tic, en boucle")]
     public Sprite[] burnIconFrames;
 
+    [Tooltip("Absorbé par les ennemis qui absorbent le Ki (KiAbsorber : C19, Dr Gero) : aucun dégât, PV rendus. Ki Blast normal seulement")]
+    public bool absorbable = false;
+
     [Tooltip("Le projectile laisse un sillage en V sur l'eau qu'il survole (WaterRipples, shader des tilemaps)")]
     public bool makesWaterRipples = true;
 
@@ -394,6 +397,15 @@ public class Projectile : MonoBehaviour
         hasHit = true;
 
         var health = target.GetComponentInParent<Health>();
+
+        // Cible qui absorbe le Ki (C19, Dr Gero) : ni dégâts ni impact, elle reprend des PV
+        if (absorbable && health != null && !health.IsDead && health.TryGetComponent(out KiAbsorber absorber))
+        {
+            absorber.Absorb(damage);
+            Destroy(gameObject);
+            return;
+        }
+
         if (health != null && FiredByPlayer)
             PlayerCombat.Hit(health, damage);
         else if (health != null)

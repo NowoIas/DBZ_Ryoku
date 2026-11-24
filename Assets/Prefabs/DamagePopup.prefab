@@ -77,6 +77,17 @@ MonoBehaviour:
   - {fileID: -7264061018389865703, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
   - {fileID: -2101027033012400661, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
   - {fileID: 3652318504674186423, guid: 2c50ea9555d310f4b9b3ac61d92738b5, type: 3}
+  blockedDigitSprites:
+  - {fileID: -4267824655601238369, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: -7610335838860586245, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: 4921081859553773598, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: 3250774946372296175, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: 506605902, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: 1545119627, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: -671854235, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: 2144674592, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: -630950919, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
+  - {fileID: -1389257585, guid: 252ed76dda363e04f974de55d478e62f, type: 3}
   digitSpacing: -1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   duration: 0.8

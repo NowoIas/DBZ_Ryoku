@@ -104,6 +104,10 @@ namespace DBZ.Enemies
         public int Level => level;
         // Mis en pause par un autre composant (stase de Cell) : ni déplacement ni attaque tant que c'est vrai
         public bool IsPaused { get; set; }
+        // Goku repéré et poursuivi (lu par Boss : barre de vie du boss affichée)
+        public bool IsChasing => isChasing;
+        // Début de poursuite (Goku repéré)
+        public event System.Action ChaseStarted;
 
         private Animator animator;
         // Attaque spéciale du boss (composant à côté, vide = aucune)
@@ -466,6 +470,7 @@ namespace DBZ.Enemies
         {
             isChasing = true;
             special?.OnChaseStarted();
+            ChaseStarted?.Invoke();
             // Le chemin de promenade (retour au départ) ne sert plus : calcul vers Goku dès cette décision
             path.Clear();
             pathTargetCell = new Vector2Int(int.MinValue, int.MinValue);

@@ -13,6 +13,10 @@ namespace DBZ.Combat
         [SerializeField] private bool showDamage = true;
         [Tooltip("Afficher les PV rendus par un soin")]
         [SerializeField] private bool showHeal = true;
+        [Tooltip("Chiffres des dégâts reçus propres à cet objet, 0 à 9 (vide = chiffres rouges du DamagePopup ; Goku : blancs, player_damage_digits)")]
+        [SerializeField] private Sprite[] damageDigitSprites = new Sprite[0];
+        [Tooltip("Afficher « 0 » en gris quand un coup ne fait rien (stase des boss)")]
+        [SerializeField] private bool showBlocked = true;
 
         [Tooltip("Position d'apparition par rapport à l'objet, en cases")]
         [SerializeField] private Vector2 offset = new Vector2(0f, 0.5f);
@@ -31,12 +35,20 @@ namespace DBZ.Combat
         {
             health.Damaged += OnDamaged;
             health.Healed += OnHealed;
+            health.BlockedHit += OnBlockedHit;
         }
 
         private void OnDisable()
         {
             health.Damaged -= OnDamaged;
             health.Healed -= OnHealed;
+            health.BlockedHit -= OnBlockedHit;
+        }
+
+        private void OnBlockedHit()
+        {
+            if (showBlocked)
+                Spawn(0f, false, false, true);
         }
 
         private void OnDamaged(float amount, bool isCritical)
@@ -51,7 +63,7 @@ namespace DBZ.Combat
                 Spawn(amount, false, true);
         }
 
-        private void Spawn(float amount, bool isCritical, bool isHeal)
+        private void Spawn(float amount, bool isCritical, bool isHeal, bool isBlocked = false)
         {
             if (popupPrefab == null)
                 return;
@@ -61,7 +73,8 @@ namespace DBZ.Combat
 
             // Pas de parent : le nombre reste en place même si la cible bouge ou disparaît
             DamagePopup popup = Instantiate(popupPrefab, position, Quaternion.identity);
-            popup.Show(Mathf.RoundToInt(amount), isCritical, isHeal);
+            Sprite[] customDigits = !isHeal && !isBlocked ? damageDigitSprites : null;
+            popup.Show(Mathf.RoundToInt(amount), isCritical, isHeal, isBlocked, customDigits);
         }
     }
 }
