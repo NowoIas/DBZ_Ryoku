@@ -104,6 +104,9 @@ namespace DBZ.Enemies
         public int Level => level;
         // Mis en pause par un autre composant (stase de Cell) : ni déplacement ni attaque tant que c'est vrai
         public bool IsPaused { get; set; }
+        // Bonus posés par un autre composant (rage de C17 / C18) : 1 = normal
+        public float DamageMultiplier { get; set; } = 1f;
+        public float SpeedMultiplier { get; set; } = 1f;
         // Goku repéré et poursuivi (lu par Boss : barre de vie du boss affichée)
         public bool IsChasing => isChasing;
         // Début de poursuite (Goku repéré)
@@ -350,7 +353,7 @@ namespace DBZ.Enemies
             }
 
             path.RemoveAt(0);
-            StartStep(step, moveSpeed);
+            StartStep(step, moveSpeed * SpeedMultiplier);
         }
 
         // Places de tir : cases alignées avec Goku (même ligne ou colonne) à range (de ... à ...), ligne dégagée jusqu'à lui.
@@ -423,7 +426,7 @@ namespace DBZ.Enemies
 
             path.Clear();
             Face(best);
-            StartStep(best, moveSpeed);
+            StartStep(best, moveSpeed * SpeedMultiplier);
             return true;
         }
 
@@ -631,7 +634,7 @@ namespace DBZ.Enemies
             {
                 // Goku n'est touché que s'il est encore sur la case visée : s'éloigner à temps esquive le coup
                 if (CellOf(player.transform.position) == CellOf(target) && player.Level == level)
-                    playerHealth?.TakeDamage(meleeDamage);
+                    playerHealth?.TakeDamage(meleeDamage * DamageMultiplier);
             });
             nextAttackTime = Time.time + attackCooldown;
         }
@@ -644,6 +647,7 @@ namespace DBZ.Enemies
                 Vector3 spawnPos = transform.position + (Vector3)(facing * projectileSpawnOffset);
                 Projectile projectile = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
                 projectile.Owner = transform;
+                projectile.damage *= DamageMultiplier;
                 projectile.Launch(facing, level);
             });
             nextRangedTime = Time.time + rangedCooldown;

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: C17
+  m_Controller: {fileID: 9100000, guid: 2baf904bc809e184cb7a14304545fa05, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: fdd0c02931a79704c99ecc72a84a73e1, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 1d993eba21703da4c8e42bb14cc7cc47, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 10d75f39c7a18444d9dbc6eaffcd559b, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 22f5cb8d7698e424c8671e7ddb544c0b, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 3e4d7e4522c96d949a5b9205869f1d50, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: dabe7d353c2257c4a9ef2910eeeb505f, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 8f85adc5ba472204c950160ddbf96364, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 638be610a1dd0e14a901609c132147c7, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 964e0d5b34ef2a0488eb1928d9f92f2f, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 0998e55091263c64f969b765d180b707, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 19726b1e0d25e2c41b39ad58aef92d24, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 0e1e78dc3fa0a0d4eae712fbf40e51a4, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 4418706d4d7a9c643a435fd5e1b85510, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 797bc4a0cfe22af43a51876698fe9bd6, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: b78bb7bb396550944909b0bf70b8591b, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: a6fb33be482f65f4c8c56c5df4c75a54, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 5796de0beb517164d850f81ddab5a01c, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: fbf53c38a6ef4b74989f0ae16a44fbf8, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: a802298e48d2f2248924308161eeb4a1, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: b7ba4c15ac7033f4abf2be413f872d2b, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 559804d7ed7d06b4eb385189a103f4ae, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 621684fd794dce44f9a2f3573dca548f, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: cda7161de637d154c9219d66bb1410cc, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 4536ef26bb8b6814b81a3eac3a2f1ffc, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 19c750173f912a744b8bee3038ca437e, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: aaefb414ae99da24a921b61e3da3824d, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 835bf8ab0ce7dce43a5b5ec29858e06f, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 883f8975073d3bc4984537a46170b7ca, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 0d3e33f29ba35664d90cac32ca10db2b, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: f73dc6c653133da41b4cadef577ba044, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 61ee12c3c0c91aa41a66d116e390e228, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: b9ba922413a20c74fb367296a33c703e, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 06c232aaec2c277468e305dd2000dfd9, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 2f9f8f324334ff449ab912d58dad34ef, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 4d6edb1a52a45934fb77d6d76db60f97, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 9a605341e66884945871438f80a549a3, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: a2601520e62c81a4ca711f763467dadc, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: f1e07731d444f3240aa3ee22b6d2064f, type: 2}
+    m_OverrideClip: {fileID: 0}
+  - m_OriginalClip: {fileID: 7400000, guid: 0cd082e0088c4ab4c906e8cb1621a1fa, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: f48a0158b79fc624da5e56a9da8d25b5, type: 2}
