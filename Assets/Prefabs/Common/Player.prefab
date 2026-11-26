@@ -99,6 +99,7 @@ GameObject:
   - component: {fileID: 6625029623467690947}
   - component: {fileID: 602117220028679980}
   - component: {fileID: 2000675379123501664}
+  - component: {fileID: 4680364974841766238}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1076,3 +1077,44 @@ MonoBehaviour:
   maxFootprints: 100
   sortingLayer: background
   sortingOrder: 5
+--- !u!114 &4680364974841766238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8383698867614165709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6989b8683d8f8694d9dc36d52a3d414e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DBZ.Combat.Petrification
+  stoneMaterial: {fileID: 2100000, guid: dfdda47b76a1d624cab1803ad5d38f5c, type: 2}
+  spreadDuration: 0.15
+  immunityDuration: 1
+  icon: {fileID: 21300000, guid: 330fc3431235b9245966244f0a99d1c5, type: 3}
+  shatter:
+    shardFrames:
+    - {fileID: 207493655, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    - {fileID: -1491935024, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    - {fileID: -183229598, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    - {fileID: -621671010, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    rockFrames:
+    - {fileID: 444347564, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    - {fileID: -829803880, guid: d00d38ed2873c9f46bd2f0ed832167c2, type: 3}
+    stoneMaterial: {fileID: 2100000, guid: dfdda47b76a1d624cab1803ad5d38f5c, type: 2}
+    shardCount: 6
+    shardFramesPerSecond: 12
+    shardSpread: 0.15
+    rockCount: 3
+    rockDistance: {x: 8, y: 18}
+    rockJumpPixels: 10
+    rockFlightDuration: 0.35
+    rockLandedDuration: 0.4
+    rockFadeDuration: 0.3
+  shatterBodyPixels:
+    x: -7
+    y: -10
+    width: 14
+    height: 22
+  shatterFeetPixels: 13

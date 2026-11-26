@@ -239,6 +239,9 @@ public class PlayerController : MonoBehaviour
     private HeightLevel heightLevel;
     // Cailloux soulevés pendant la transformation (absent = pas de cailloux)
     private TransformationRocks transformationRocks;
+    // Pétrification (crachat de Dabura) : figé, plus aucune décision
+    private Petrification petrification;
+    public bool IsPetrified => petrification != null && petrification.IsPetrified;
     // Actions définies dans Assets/Settings/InputSystem_Actions.inputactions (touches remappables)
     private InputSystem_Actions controls;
 
@@ -255,6 +258,7 @@ public class PlayerController : MonoBehaviour
         health = GetComponent<Health>();
         heightLevel = GetComponent<HeightLevel>();
         transformationRocks = GetComponent<TransformationRocks>();
+        petrification = GetComponent<Petrification>();
         groundSortingLayer = spriteRenderer.sortingLayerName;
         controls = new InputSystem_Actions();
 
@@ -406,7 +410,8 @@ public class PlayerController : MonoBehaviour
             Advance((isFlying ? flySpeed : isRunning ? runSpeed : moveSpeed) * Time.deltaTime);
 
         // Pendant un changement de scène (porte), le joueur ne fait plus rien
-        if (!isMoving && !isAttacking && !SceneTransition.IsTransitioning)
+        // En pierre : le pas en cours se finit, puis plus rien (les appuis restent mémorisés)
+        if (!isMoving && !isAttacking && !SceneTransition.IsTransitioning && !IsPetrified)
         {
             BufferedAction buffered = IsBuffered(bufferedActionTime) ? bufferedAction : BufferedAction.None;
 
@@ -759,7 +764,7 @@ public class PlayerController : MonoBehaviour
         if (!paysWithHealth)
             ki.StartKamehamehaBeam();
 
-        while (key.IsPressed() && beam != null && !beam.IsReleased)
+        while (key.IsPressed() && beam != null && !beam.IsReleased && !IsPetrified)
         {
             // Plus assez de Ki (ou de PV : il ne peut pas se tuer avec son propre rayon) : le rayon s'arrête
             if (paysWithHealth ? !health.TrySpend(character.beamHealthPerSecond * Time.deltaTime) : ki.IsDepleted)
@@ -1140,7 +1145,7 @@ public class PlayerController : MonoBehaviour
         activeGenkidama = Instantiate(chargedPrefab, transform.position, Quaternion.identity);
         activeGenkidama.Begin(transform.position, facing, level);
 
-        while (controls.Player.Genkidama.IsPressed())
+        while (controls.Player.Genkidama.IsPressed() && !IsPetrified)
             yield return null;
 
         activeGenkidama.Release();

@@ -39,6 +39,8 @@ public class Projectile : MonoBehaviour
     // Images dessinées vers la droite (Frames Right), tournées selon la direction du tir (Volleyball de Gotenks) ;
     // décochée : une liste d'images par direction
     public bool rotateWithDirection = false;
+    [Tooltip("Rotate With Direction : image dessinée vers un autre côté que la droite (180 = vers la gauche : crachat de Dabura)")]
+    public float rotationOffsetDegrees = 0f;
     [Tooltip("Une image par direction, 8 directions (remplace les listes ci-dessus si remplie), dans l'ordre : bas, bas-droite, " +
              "droite, haut-droite, haut, haut-gauche, gauche, bas-gauche (boules de la toupie de Raditz)")]
     public Sprite[] framesEightDirections;
@@ -69,6 +71,10 @@ public class Projectile : MonoBehaviour
 
     [Tooltip("Absorbé par les ennemis qui absorbent le Ki (KiAbsorber : C19, Dr Gero) : aucun dégât, PV rendus. Ki Blast normal seulement")]
     public bool absorbable = false;
+
+    [Tooltip("Joueur touché : pétrifié pendant ce temps (secondes, 0 = non ; composant Petrification du joueur) : crachat de Dabura")]
+    [Min(0f)]
+    public float petrifyDuration = 0f;
 
     [Tooltip("Le projectile laisse un sillage en V sur l'eau qu'il survole (WaterRipples, shader des tilemaps)")]
     public bool makesWaterRipples = true;
@@ -164,7 +170,7 @@ public class Projectile : MonoBehaviour
             frames = new[] { framesEightDirections[((index % 8) + 8) % 8] };
         }
         if (rotateWithDirection)
-            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + rotationOffsetDegrees);
     }
 
     private void Update()
@@ -420,6 +426,9 @@ public class Projectile : MonoBehaviour
             if (destructibles != null)
                 destructibles.TakeDamage(insideHitCell, damage);
         }
+
+        if (petrifyDuration > 0f && health != null && !health.IsDead && health.TryGetComponent(out Petrification petrification))
+            petrification.TryPetrify(petrifyDuration);
 
         if (burnDuration > 0f && health != null && !health.IsAlly && !health.IsDead)
             StatusEffects.Of(health).AddDamageOverTime(StatusEffects.Burn, burnDuration, burnDamage, burnInterval, burnIcon, burnIconFrames);

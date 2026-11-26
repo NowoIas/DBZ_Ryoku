@@ -26,6 +26,20 @@ namespace DBZ.Combat
         [Tooltip("Temps passé couché sur la dernière image avant de disparaître, en secondes")]
         [SerializeField] private float lyingDuration = 0.5f;
 
+        [Header("Mort en pierre (matériau vide = non) : Dabura")]
+        [Tooltip("Matériau « pierre » (Shaders/Stone.mat) : après l'animation de mort, la pierre monte des pieds à la tête, "
+            + "il reste figé puis éclate et disparaît")]
+        [SerializeField] private Material stoneMaterial;
+        [Tooltip("Temps de montée de la pierre (secondes)")]
+        [SerializeField] private float stoneDuration = 0.6f;
+        [Tooltip("Temps où il reste en pierre avant d'éclater (secondes)")]
+        [SerializeField] private float stoneHoldDuration = 0.5f;
+        [SerializeField] private StoneShatter.Settings stoneShatter = new StoneShatter.Settings();
+        [Tooltip("Zone du corps où naissent les éclats, en pixels depuis le centre de la case (x, y, largeur, hauteur)")]
+        [SerializeField] private RectInt stoneShatterBodyPixels = new RectInt(-14, -12, 28, 44);
+        [Tooltip("Sol où retombent les cailloux, en pixels sous le centre de la case")]
+        [SerializeField] private int stoneShatterFeetPixels = 13;
+
         [Header("Explosions à la mort (vide = aucune)")]
         [Tooltip("Explosion jouée à la mort (prefab avec OneShotEffect : BossExplosion, EnemyExplosion)")]
         [SerializeField] private OneShotEffect explosionPrefab;
@@ -33,8 +47,6 @@ namespace DBZ.Combat
         [SerializeField] private int explosionCount = 1;
         [Tooltip("Temps entre deux explosions, en secondes")]
         [SerializeField] private float explosionInterval = 0.1f;
-        [Tooltip("Durée d'une explosion, en secondes (images ÷ vitesse du prefab)")]
-        [SerializeField] private float explosionDuration = 0.25f;
         [Tooltip("Centre de la zone des explosions, en pixels depuis le centre de la case (Cell : (0,16), milieu de son sprite 64×64)")]
         [SerializeField] private Vector2Int explosionCenterPixels = Vector2Int.zero;
         [Tooltip("Écart maximal autour du centre, en pixels (0 = toutes au centre)")]
@@ -46,18 +58,11 @@ namespace DBZ.Combat
 
         private const float PixelsPerUnit = 32f;
 
-        // Durées lues par la barre du boss (elle se vide pendant l'animation et disparaît avec lui)
         public bool HasDeathAnimation => !respawn && deathFrames != null && deathFrames.Length > 0 && deathFramesPerSecond > 0f;
-        public float DeathAnimationDuration => HasDeathAnimation ? deathFrames.Length / deathFramesPerSecond : 0f;
-        public float LyingDuration => HasDeathAnimation ? lyingDuration : 0f;
+        public bool HasStone => !respawn && stoneMaterial != null;
         public bool HasExplosions => !respawn && explosionPrefab != null && explosionCount > 0;
-        // Fin de la dernière explosion, depuis le K.O.
-        public float ExplosionsDuration => HasExplosions ? (explosionCount - 1) * explosionInterval + explosionDuration : 0f;
-        // Mort mise en scène (animation ou explosions) : la barre du boss se vide pendant l'animation, ou pendant les explosions s'il n'y en a pas,
-        // puis disparaît avec le boss (fin du temps couché ou de la dernière explosion)
-        public bool HasDeathSequence => HasDeathAnimation || HasExplosions;
-        public float DeathDrainDuration => HasDeathAnimation ? DeathAnimationDuration : ExplosionsDuration;
-        public float DeathHideDelay => HasDeathAnimation ? Mathf.Max(lyingDuration, ExplosionsDuration - DeathAnimationDuration) : 0f;
+        // Mort mise en scène (animation, explosions, pierre) : l'objet reste jusqu'à la fin
+        public bool HasDeathSequence => HasDeathAnimation || HasExplosions || HasStone;
 
         private Health health;
         private SpriteRenderer[] spriteRenderers;
@@ -126,7 +131,12 @@ namespace DBZ.Combat
                 }
                 yield return new WaitForSeconds(lyingDuration);
             }
-            else
+
+            if (HasStone)
+            {
+                yield return StoneDeath();
+            }
+            else if (!HasDeathAnimation)
             {
                 yield return new WaitForSeconds(hideDelay);
                 foreach (var sr in spriteRenderers)
@@ -137,6 +147,30 @@ namespace DBZ.Combat
             while (explosionsPending)
                 yield return null;
             Destroy(gameObject);
+        }
+
+        // La pierre monte, il reste figé, puis il éclate (éclats et cailloux) et disparaît
+        private IEnumerator StoneDeath()
+        {
+            var spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+                yield break;
+            var skin = new StoneSkin(spriteRenderer, stoneMaterial);
+            for (float t = 0f; t < stoneDuration; t += Time.deltaTime)
+            {
+                skin.SetProgress(t / stoneDuration);
+                yield return null;
+            }
+            skin.SetProgress(1f);
+            yield return new WaitForSeconds(stoneHoldDuration);
+
+            Vector2 center = transform.position;
+            var body = new Rect(center + (Vector2)stoneShatterBodyPixels.position / PixelsPerUnit, (Vector2)stoneShatterBodyPixels.size / PixelsPerUnit);
+            StoneShatter.Spawn(stoneShatter, body, center.y - stoneShatterFeetPixels / PixelsPerUnit,
+                spriteRenderer.sortingLayerName, spriteRenderer.sortingOrder);
+            foreach (var sr in spriteRenderers)
+                sr.enabled = false;
+            skin.End();
         }
 
         private IEnumerator Explosions()

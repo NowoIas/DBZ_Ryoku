@@ -9,9 +9,10 @@ namespace DBZ.Enemies
     // La rage cesse quand l'écart redescend sous exitGap (plus bas que enterGap : pas d'allumage / extinction
     // en boucle autour du seuil). Partenaire K.O. : le survivant est enragé jusqu'à la fin.
     // Le partenaire est trouvé tout seul : l'autre BossRage de la scène avec le même pairName (le plus proche).
-    // Aura en 2 couches (2026-11-25, demande util.) :
-    //  - derrière : l'aura dessinée par l'util. (une image), animée par script (DrawnAuraAnimator : bosses des côtés qui
-    //    montent), bas calé sur le bas de l'ombre du boss (ne dépasse jamais dessous) ;
+    // Aura en 2 couches :
+    //  - derrière (2026-11-26, demande util.) : flamme rouge calculée par le shader "DBZ/Rage Flame" depuis l'image
+    //    affichée (bouge entièrement, suit la marche et les coups), bas coupé au bas de l'ombre ;
+    //    l'ancienne aura dessinée animée par script (drawnAura + DrawnAuraAnimator) reste possible si drawnAura est rempli ;
     //  - devant elle : shader "DBZ/Rage Aura" sur un carré centré sur le boss, qui lit l'image affichée (sa silhouette) :
     //    aura fine violette collée aux pixels autour du sprite + traits de Ki et étincelles qui montent.
     [RequireComponent(typeof(Health))]
@@ -46,7 +47,13 @@ namespace DBZ.Enemies
         [Tooltip("Durée d'apparition / de disparition de l'aura (secondes)")]
         [SerializeField] private float auraFadeDuration = 0.2f;
 
-        [Header("Aura dessinée (derrière)")]
+        [Header("Flamme (derrière)")]
+        [Tooltip("Matériau du shader DBZ/Rage Flame (couleurs, taille et vitesse des flammes) ; vide = pas de flamme")]
+        [SerializeField] private Material flameMaterial;
+        [Tooltip("Côté du carré de la flamme, centré sur le boss (cases)")]
+        [SerializeField] private float flameSizeCells = 3f;
+
+        [Header("Aura dessinée (ancienne, derrière)")]
         [Tooltip("Image de l'aura (une seule), Read/Write coché à l'import ; vide = pas d'aura dessinée")]
         [SerializeField] private Texture2D drawnAura;
         [Tooltip("Montée des bosses des côtés (pixels par seconde)")]
@@ -69,7 +76,9 @@ namespace DBZ.Enemies
         private bool hadPartner;
         private bool isEnraged;
         private MeshRenderer auraRenderer;
+        private MeshRenderer flameRenderer;
         private Mesh mesh;
+        private Mesh flameMesh;
         private MaterialPropertyBlock block;
         private float auraIntensity;
         private DrawnAuraAnimator drawnAnimator;
@@ -104,6 +113,8 @@ namespace DBZ.Enemies
             auraIntensity = 0f;
             if (auraRenderer != null)
                 auraRenderer.enabled = false;
+            if (flameRenderer != null)
+                flameRenderer.enabled = false;
             if (drawnRenderer != null)
                 drawnRenderer.enabled = false;
         }
@@ -112,6 +123,8 @@ namespace DBZ.Enemies
         {
             if (mesh != null)
                 Destroy(mesh);
+            if (flameMesh != null)
+                Destroy(flameMesh);
             if (drawnSprite != null)
                 Destroy(drawnSprite);
             if (drawnAnimator != null)
@@ -192,26 +205,34 @@ namespace DBZ.Enemies
                     drawnRenderer.enabled = false;
                 }
             }
-            if (auraMaterial == null)
-                return;
-            var child = new GameObject("RageAura");
-            child.transform.SetParent(transform, false);
-            float half = auraSizeCells * 0.5f;
-            mesh = new Mesh { name = "RageAura" };
-            mesh.vertices = new[] { new Vector3(-half, -half), new Vector3(half, -half), new Vector3(-half, half), new Vector3(half, half) };
-            mesh.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) };
-            mesh.triangles = new[] { 0, 2, 1, 2, 3, 1 };
-            child.AddComponent<MeshFilter>().sharedMesh = mesh;
-            auraRenderer = child.AddComponent<MeshRenderer>();
-            auraRenderer.sharedMaterial = auraMaterial;
-            auraRenderer.enabled = false;
             block = new MaterialPropertyBlock();
+            if (flameMaterial != null)
+                flameRenderer = CreateQuad("RageFlame", flameSizeCells, flameMaterial, out flameMesh);
+            if (auraMaterial != null)
+                auraRenderer = CreateQuad("RageAura", auraSizeCells, auraMaterial, out mesh);
+        }
+
+        // Carré centré sur le boss, qui porte un shader lisant l'image affichée
+        private MeshRenderer CreateQuad(string objectName, float sizeCells, Material material, out Mesh quad)
+        {
+            var child = new GameObject(objectName);
+            child.transform.SetParent(transform, false);
+            float half = sizeCells * 0.5f;
+            quad = new Mesh { name = objectName };
+            quad.vertices = new[] { new Vector3(-half, -half), new Vector3(half, -half), new Vector3(-half, half), new Vector3(half, half) };
+            quad.uv = new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) };
+            quad.triangles = new[] { 0, 2, 1, 2, 3, 1 };
+            child.AddComponent<MeshFilter>().sharedMesh = quad;
+            var quadRenderer = child.AddComponent<MeshRenderer>();
+            quadRenderer.sharedMaterial = material;
+            quadRenderer.enabled = false;
+            return quadRenderer;
         }
 
         // Après l'Animator : l'aura suit l'image affichée
         private void LateUpdate()
         {
-            if (auraRenderer == null && drawnRenderer == null)
+            if (auraRenderer == null && drawnRenderer == null && flameRenderer == null)
                 return;
             if (health.IsDead)
             {
@@ -235,23 +256,31 @@ namespace DBZ.Enemies
                     drawnAnimator.SetOffset(Mathf.FloorToInt(Time.time * drawnRiseSpeed));
                 }
             }
-            if (auraRenderer == null)
+            // Flamme sous l'aura fine (ordre − 2), aura fine juste derrière le boss (ordre − 1)
+            UpdateQuad(flameRenderer, sprite, flameSizeCells, 2);
+            UpdateQuad(auraRenderer, sprite, auraSizeCells, 1);
+        }
+
+        // Envoie l'image affichée au shader : l'effet suit chaque image (marche, coups) ; jamais dessiné sur le boss
+        private void UpdateQuad(MeshRenderer quadRenderer, Sprite sprite, float sizeCells, int ordersBehind)
+        {
+            if (quadRenderer == null)
                 return;
-            auraRenderer.enabled = auraIntensity > 0f && sprite != null && spriteRenderer.enabled;
-            if (!auraRenderer.enabled)
+            quadRenderer.enabled = auraIntensity > 0f && sprite != null && spriteRenderer.enabled;
+            if (!quadRenderer.enabled)
                 return;
-            // Derrière le boss (l'aura ne se dessine jamais sur lui), même calque, suit son niveau
-            auraRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
-            auraRenderer.sortingOrder = spriteRenderer.sortingOrder - 1;
+            quadRenderer.sortingLayerID = spriteRenderer.sortingLayerID;
+            quadRenderer.sortingOrder = spriteRenderer.sortingOrder - ordersBehind;
 
             Rect rect = sprite.rect;
+            block.Clear();
             block.SetTexture(MainTexId, sprite.texture);
             block.SetVector(SpriteRectId, new Vector4(rect.xMin, rect.yMin, rect.xMax, rect.yMax));
             block.SetVector(SpritePivotId, new Vector4(rect.xMin + sprite.pivot.x, rect.yMin + sprite.pivot.y));
-            block.SetFloat(SizePixelsId, auraSizeCells * PixelsPerUnit);
+            block.SetFloat(SizePixelsId, sizeCells * PixelsPerUnit);
             block.SetFloat(IntensityId, auraIntensity);
             block.SetFloat(FlipId, spriteRenderer.flipX ? 1f : 0f);
-            auraRenderer.SetPropertyBlock(block);
+            quadRenderer.SetPropertyBlock(block);
         }
     }
 }

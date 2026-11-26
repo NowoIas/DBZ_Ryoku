@@ -382,7 +382,9 @@ MonoBehaviour:
   auraMaterial: {fileID: 2100000, guid: bd49ed3f42282474292cbc9c4354fa1e, type: 2}
   auraSizeCells: 2.5
   auraFadeDuration: 0.2
-  drawnAura: {fileID: 2800000, guid: 5978944db21d0924eb227324dc8be459, type: 3}
+  flameMaterial: {fileID: 2100000, guid: 3da89d97d6bab4445997a19cea6467c8, type: 2}
+  flameSizeCells: 3
+  drawnAura: {fileID: 0}
   drawnRiseSpeed: 12
   drawnFixedTopRows: 7
   drawnFixedBottomRows: 3

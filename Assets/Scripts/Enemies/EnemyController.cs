@@ -705,6 +705,72 @@ namespace DBZ.Enemies
             return HasClearShotFrom(transform.position + Vector3.up * rowOffset, level, delta - new Vector2Int(0, rowOffset));
         }
 
+        // --- Utilisés par les attaques spéciales qui déplacent l'ennemi elles-mêmes (charge de Cell semi-parfait) ---
+
+        // Un pas possible depuis from (calques de collision, autres ennemis, objets qui bloquent ; Goku non compris)
+        public bool CanDashStep(Vector3 from, Vector2 direction, int fromLevel)
+        {
+            if (!CollisionMap.CanMoveOnLevel(from, direction, fromLevel))
+                return false;
+            Vector3 target = from + (Vector3)direction;
+            int targetLevel = LevelMap.LevelAfterEntering(target, fromLevel);
+            Vector2Int targetCell = CellOf(target);
+            foreach (var other in Active)
+            {
+                if (other != this && !other.health.IsDead && other.level == targetLevel && CellOf(other.moveTarget) == targetCell)
+                    return false;
+            }
+            foreach (var hit in Physics2D.OverlapCircleAll(target, collisionCheckRadius, solidObjectsLayer))
+            {
+                if (!hit.transform.IsChildOf(transform) && HeightLevel.IsOnLevel(hit, targetLevel))
+                    return false;
+            }
+            return true;
+        }
+
+        // Goku sur cette case (ou en train d'y entrer), à ce niveau
+        public bool IsPlayerAt(Vector3 cell, int cellLevel)
+        {
+            if (player == null || player.Level != cellLevel)
+                return false;
+            Vector2Int target = CellOf(cell);
+            return CellOf(player.OccupiedCell) == target || CellOf(player.transform.position) == target;
+        }
+
+        // Case de Goku moins celle de l'ennemi, et même niveau ; faux si Goku n'est pas là
+        public bool TryGetPlayerDelta(out Vector2Int delta, out bool sameLevel)
+        {
+            delta = Vector2Int.zero;
+            sameLevel = false;
+            if (player == null)
+                return false;
+            delta = CellOf(player.OccupiedCell) - CellOf(transform.position);
+            sameLevel = player.Level == level;
+            return true;
+        }
+
+        // Coup porté à Goku par une attaque spéciale (bonus de rage compris)
+        public void HitPlayer(float damage)
+        {
+            playerHealth?.TakeDamage(damage * DamageMultiplier);
+        }
+
+        // Déplacement fait par l'attaque spéciale : position affichée et case visée (collider, réservation)
+        public void MoveDuringSpecial(Vector3 position, Vector3 targetCell)
+        {
+            transform.position = position;
+            moveTarget = targetCell;
+        }
+
+        // Fin (ou interruption) d'un déplacement d'attaque spéciale : posé sur la case visée, niveau à jour
+        public void SnapToTargetCell()
+        {
+            transform.position = moveTarget;
+            int newLevel = LevelMap.LevelAfterEntering(moveTarget, level);
+            if (newLevel != level)
+                SetLevel(newLevel);
+        }
+
         // Bien placé pour tirer : même colonne, ou à gauche / à droite rowOffset rangées sous Goku, à range, ligne dégagée
         private bool IsAtFiringSpot(Vector2Int delta, Vector2Int range, int rowOffset)
         {
